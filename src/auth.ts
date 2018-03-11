@@ -1,7 +1,7 @@
-import { Atom } from "mobx";
-import { whenAsync } from "mobx-utils";
 import * as firebase from "firebase/app";
 import "firebase/auth";
+import { Atom } from "mobx";
+import { whenAsync } from "mobx-utils";
 
 import { IFireMobAuth } from "./api";
 
@@ -10,9 +10,9 @@ export class FireMobAuth implements IFireMobAuth {
     private _unsubscribe: firebase.Unsubscribe | null = null;
     private _uid = "";
     private _errorCode = "";
-    private _hasError = false;    
+    private _hasError = false;
     private _isFetching = false;
-    
+
     constructor(private readonly _base: firebase.auth.Auth) {
         this._atom = new Atom("FireMobAuth", this._onBecomeObserved, this._onBecomeUnobserved);
     }
@@ -46,13 +46,13 @@ export class FireMobAuth implements IFireMobAuth {
         this._isFetching = true;
         this._unsubscribe = this._base.onIdTokenChanged(
             this._onApplyUser,
-            this._onApplyError
+            this._onApplyError,
         );
-    };
+    }
 
     private _onBecomeUnobserved = () => {
         this._unsubscribe!();
-    };
+    }
 
     private _onApplyUser = (user: firebase.User) => {
         const { uid } = user;
@@ -81,7 +81,7 @@ export class FireMobAuth implements IFireMobAuth {
         if (changed) {
             this._atom.reportChanged();
         }
-    };
+    }
 
     private _onApplyError = (error: firebase.auth.Error) => {
         const { code } = error;

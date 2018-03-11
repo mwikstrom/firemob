@@ -7,7 +7,7 @@ export interface IFireMobAuth {
     readonly errorCode: string;
     readonly hasError: boolean;
     readonly isFetching: boolean;
-    whenNotFetching(): Promise<void>;    
+    whenNotFetching(): Promise<void>;
 }
 
 export type FireStoreValue = any;
@@ -17,10 +17,10 @@ export interface IFireStoreData {
 }
 
 export interface IFireMobCollectionSource {
-    //collection<TData extends {} = IFireStoreData>(name: string): IFireMobCollection<TData>;
+    collection<TData extends {} = IFireStoreData>(name: string): IFireMobCollection<TData>;
 }
 
-export interface IFireMobFilterBuilder<TData extends {}> {
+/*export interface IFireMobFilterBuilder<TData extends {}> {
     readonly not: IFireMobFilterBuilder<TData>;
     eq(value: FireStoreValue): IFireMobQuery<TData>;
     gt(value: FireStoreValue): IFireMobQuery<TData>;
@@ -29,26 +29,27 @@ export interface IFireMobFilterBuilder<TData extends {}> {
     lte(value: FireStoreValue): IFireMobQuery<TData>;
 }
 
-export type SortDirection = 
-    "ASC" | 
-    "DESC";
+export type SortDirection =
+    "asc" |
+    "desc";
 
-export interface IFireMobQuery<TData extends {}> {    
+export interface IFireMobQuery<TData extends {}> {
     where(field: keyof TData): IFireMobFilterBuilder<TData>;
     orderBy(field: keyof TData): IFireMobQuery<TData>;
     orderBy(field: keyof TData, direction: SortDirection): IFireMobQuery<TData>;
     orderByDescending(field: keyof TData): IFireMobQuery<TData>;
-}
+}*/
 
-export interface IFireMobCollection<TData extends {}> extends IFireMobQuery<TData> {
+export interface IFireMobCollection<TData extends {} = IFireStoreData> /*extends IFireMobQuery<TData>*/ {
     readonly root: IFireMobRoot;
-    readonly parent: IFireMobDocument;    
+    readonly name: string;
+    readonly parent: IFireMobDocument | null;
     doc(id: string): IFireMobDocument<TData>;
 }
 
 export interface IFireMobDocument<TData extends {} = IFireStoreData> extends IFireMobCollectionSource {
+    readonly parent: IFireMobCollection<TData>;
     readonly id: string;
-    readonly data: TData;
-    readonly parent: IFireMobCollection<TData>
     readonly root: IFireMobRoot;
+    readonly data: TData;
 }
