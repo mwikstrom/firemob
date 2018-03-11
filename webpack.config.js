@@ -14,7 +14,8 @@ module.exports = {
     },
     devtool: "source-map",
     externals: [
-        "mobx"
+        "mobx",
+        "firebase"
     ],
     resolve: {
         extensions: [

@@ -1,3 +1,15 @@
+export interface IFireMobRoot extends IFireMobCollectionSource {
+    readonly auth: IFireMobAuth;
+}
+
+export interface IFireMobAuth {
+    readonly uid: string;
+    readonly errorCode: string;
+    readonly hasError: boolean;
+    readonly isFetching: boolean;
+    whenNotFetching(): Promise<void>;    
+}
+
 export type FireStoreValue = any;
 
 export interface IFireStoreData {
@@ -5,28 +17,7 @@ export interface IFireStoreData {
 }
 
 export interface IFireMobCollectionSource {
-    collection<TData extends {} = IFireStoreData>(name: string): IFireMobCollection<TData>;
-}
-
-export interface IFireMobStore extends IFireMobCollectionSource {
-    readonly auth: IFireMobAuth;
-}
-
-export type FireMobState = 
-    "transient" |
-    "pending" |
-    "ready" |
-    "fault";
-
-export interface IFireMobStateSource<TState> {    
-    readonly state: TState;
-    readonly notPending: Promise<void>;
-}
-
-export type FireMobAuthState = FireMobState;
-
-export interface IFireMobAuth extends IFireMobStateSource<FireMobAuthState> {
-    readonly uid: string;
+    //collection<TData extends {} = IFireStoreData>(name: string): IFireMobCollection<TData>;
 }
 
 export interface IFireMobFilterBuilder<TData extends {}> {
@@ -42,9 +33,7 @@ export type SortDirection =
     "ASC" | 
     "DESC";
 
-export type FireMobQueryState = FireMobState;
-
-export interface IFireMobQuery<TData extends {}> extends IFireMobStateSource<FireMobQueryState> {    
+export interface IFireMobQuery<TData extends {}> {    
     where(field: keyof TData): IFireMobFilterBuilder<TData>;
     orderBy(field: keyof TData): IFireMobQuery<TData>;
     orderBy(field: keyof TData, direction: SortDirection): IFireMobQuery<TData>;
@@ -52,20 +41,14 @@ export interface IFireMobQuery<TData extends {}> extends IFireMobStateSource<Fir
 }
 
 export interface IFireMobCollection<TData extends {}> extends IFireMobQuery<TData> {
-    readonly store: IFireMobStore;
+    readonly root: IFireMobRoot;
     readonly parent: IFireMobDocument;    
     doc(id: string): IFireMobDocument<TData>;
 }
 
-export type FireMobDocumentState = 
-    FireMobState |
-    "notfound" |
-    "local" |
-    "dirty";
-
-export interface IFireMobDocument<TData extends {} = IFireStoreData> extends IFireMobCollectionSource, IFireMobStateSource<FireMobDocumentState> {
+export interface IFireMobDocument<TData extends {} = IFireStoreData> extends IFireMobCollectionSource {
     readonly id: string;
     readonly data: TData;
     readonly parent: IFireMobCollection<TData>
-    readonly store: IFireMobStore;
+    readonly root: IFireMobRoot;
 }
