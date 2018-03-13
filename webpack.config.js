@@ -14,8 +14,8 @@ module.exports = {
     },
     devtool: "source-map",
     externals: [
-        "mobx",
-        "firebase"
+        /mobx/,
+        /firebase/,
     ],
     resolve: {
         extensions: [
@@ -27,7 +27,7 @@ module.exports = {
         rules: [
             {
                 test: /\.ts$/,
-                use: "ts-loader",
+                use: [ "babel-loader", "ts-loader" ],
                 exclude: /node_modules/
             }
         ]     
