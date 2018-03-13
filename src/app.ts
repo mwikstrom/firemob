@@ -1,6 +1,8 @@
 import * as firebase from "firebase/app";
+import "firebase/firestore";
 
 import { FireMobAuth } from "./auth";
+import { FireMobDocument } from "./document";
 
 export class FireMobApp {
     constructor(name?: string)
@@ -19,12 +21,22 @@ export class FireMobApp {
         return priv.auth;
     }
 
+    public get base() {
+        return Private.map.get(this)!.base;
+    }
+
     public get name() {
         return Private.map.get(this)!.base.name;
     }
 
     public async dispose() {
         return Private.map.get(this)!.base.delete();
+    }
+
+    public doc(path: string) {
+        const priv = Private.map.get(this)!;
+        const ref = priv.base.firestore().doc(path);
+        return new FireMobDocument(ref);
     }
 }
 

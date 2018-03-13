@@ -16,6 +16,7 @@ describe("FireMobApp", () => {
         firebase.initializeApp(config);
         const app = new FireMobApp();
         expect(app.name).toBe("[DEFAULT]");
+        expect(app.base).toBe(firebase.app());
         await app.dispose();
     });
 
