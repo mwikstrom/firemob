@@ -1,5 +1,5 @@
 import * as firebase from "firebase/app";
-import { reaction, observe } from "mobx";
+import { observe, reaction } from "mobx";
 
 import { FireMobApp } from "./app";
 import { FireMobDocument } from "./document";
@@ -25,10 +25,10 @@ describe("FireMobDocument", () => {
 
             app = new FireMobApp(config);
             doc = app.doc(path);
-            stop = reaction(() => doc.changeNumber, () => {});
+            stop = reaction(() => doc.changeNumber, () => { /* no-op */ });
 
             expect(doc.id).toBe(id);
-            expect(doc.ref.path).toBe(path);            
+            expect(doc.ref.path).toBe(path);
             expect(doc.isFetching).toBe(true);
 
             await doc.whenNotFetching;
@@ -41,10 +41,10 @@ describe("FireMobDocument", () => {
         });
 
         it("can be fetched", async () => {
-            expect(doc.exists).toBe(true);            
+            expect(doc.exists).toBe(true);
             expect(doc.hasError).toBe(false);
             expect(doc.hasData).toBe(true);
-        });        
+        });
     });
 
     describe("private document b", async () => {
@@ -58,7 +58,7 @@ describe("FireMobDocument", () => {
 
             app = new FireMobApp(config);
             doc = app.doc(path);
-            stop = reaction(() => doc.changeNumber, () => {});
+            stop = reaction(() => doc.changeNumber, () => { /* no-op */ });
 
             expect(doc.id).toBe(id);
             expect(doc.ref.path).toBe(path);
@@ -107,15 +107,15 @@ describe("FireMobDocument", () => {
             expect(doc.isFetching).toBe(false);
             expect(doc.hasData).toBe(true);
             expect(doc.hasError).toBe(false);
-            
-            await app.auth.signOut();
+
+            app.auth.signOut();
             await doc.nextSync;
             expect(doc.isFetching).toBe(false);
             expect(doc.hasData).toBe(true);
             expect(doc.hasError).toBe(true);
             expect(doc.errorCode).toBe("permission-denied");
-            
-            await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");            
+
+            await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
             doc.reset();
 
             await doc.nextSync;
@@ -147,7 +147,7 @@ describe("FireMobDocument", () => {
             expect(doc.isFromCache).toBe(false);
             expect(doc.get("value")).toBe(after);
         });
-    })
+    });
 
     describe("non-existing document c", () => {
         let app: FireMobApp;
@@ -160,7 +160,7 @@ describe("FireMobDocument", () => {
 
             app = new FireMobApp(config);
             doc = app.doc(path);
-            stop = reaction(() => doc.changeNumber, () => {});
+            stop = reaction(() => doc.changeNumber, () => { /* no-op */ });
 
             expect(doc.id).toBe(id);
             expect(doc.ref.path).toBe(path);
@@ -180,6 +180,6 @@ describe("FireMobDocument", () => {
             expect(doc.hasData).toBe(false);
             expect(doc.hasError).toBe(true);
             expect(doc.errorCode).toBe("permission-denied");
-        });        
+        });
     });
 });

@@ -12,7 +12,7 @@ export class FireMobDocument {
 
     public get ref() { return Private.map.get(this)!.ref; }
 
-    public get id() { return this.ref.id; }    
+    public get id() { return this.ref.id; }
 
     public get hasData() { return observe(this).hasData; }
 
@@ -21,11 +21,11 @@ export class FireMobDocument {
     public get exists() { return observe(this).exists; }
 
     public get isFromCache() { return observe(this).isFromCache; }
-    
+
     public get hasPendingWrites() { return observe(this).hasPendingWrites; }
-    
+
     public get hasError() { return observe(this).hasError; }
-    
+
     public get errorCode() { return observe(this).errorCode; }
 
     public get data() { return observe(this).data; }
@@ -46,14 +46,14 @@ export class FireMobDocument {
         const before = this.changeNumber;
         return new Promise(resolve => {
             when(() => this.changeNumber !== before, resolve);
-        });      
+        });
     }
 
     public get nextSync() {
         const before = this.syncNumber;
         return new Promise(resolve => {
             when(() => this.syncNumber !== before, resolve);
-        });      
+        });
     }
 
     public async reset() {
@@ -83,7 +83,7 @@ class Private {
     public data: firebase.firestore.DocumentData = {};
     public changeNumber = 0;
     public syncNumber = 0;
-    private unsubscribe: Unsubscribe | null = null;    
+    private unsubscribe: Unsubscribe | null = null;
 
     constructor(
         public readonly ref: firebase.firestore.DocumentReference,
@@ -91,15 +91,15 @@ class Private {
         this.atom = new Atom(
             "FireMobDocument@" + ref.path,
             this.onBecomeObserved,
-            this.onBecomeUnobserved
+            this.onBecomeUnobserved,
         );
     }
 
     public reset() {
         if (this.unsubscribe && this.hasError) {
             const options: firebase.firestore.DocumentListenOptions = {
-                includeMetadataChanges: true,            
-            };        
+                includeMetadataChanges: true,
+            };
 
             this.hasError = false;
             this.isFetching = true;
@@ -110,15 +110,15 @@ class Private {
             this.unsubscribe = this.ref.onSnapshot(
                 options,
                 this.onSnapshot,
-                this.onError
+                this.onError,
             );
         }
     }
 
     private onBecomeObserved = () => {
         const options: firebase.firestore.DocumentListenOptions = {
-            includeMetadataChanges: true,            
-        };        
+            includeMetadataChanges: true,
+        };
 
         /* istanbul ignore else */
         if (!this.hasData) {
@@ -128,7 +128,7 @@ class Private {
         this.unsubscribe = this.ref.onSnapshot(
             options,
             this.onSnapshot,
-            this.onError
+            this.onError,
         );
     }
 
@@ -164,5 +164,5 @@ class Private {
         ++this.changeNumber;
         ++this.syncNumber;
         this.atom.reportChanged();
-    }    
+    }
 }
