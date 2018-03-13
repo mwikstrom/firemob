@@ -4,7 +4,7 @@ import { FireMobAuth } from "./auth";
 
 export class FireMobApp {
     constructor(name?: string)
-    constructor(options: {}, name: string)
+    constructor(options: {}, name?: string)
     constructor(optionsOrName?: {}, name?: string) {
         Private.map.set(this, new Private(optionsOrName, name));
     }
@@ -21,6 +21,10 @@ export class FireMobApp {
 
     public get name() {
         return Private.map.get(this)!.base.name;
+    }
+
+    public async dispose() {
+        return Private.map.get(this)!.base.delete();
     }
 }
 
