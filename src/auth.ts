@@ -1,7 +1,6 @@
 import * as firebase from "firebase/app";
 import "firebase/auth";
-import { Atom } from "mobx";
-import { whenAsync } from "mobx-utils";
+import { Atom, when } from "mobx";
 
 export class FireMobAuth {
     constructor(
@@ -18,9 +17,26 @@ export class FireMobAuth {
 
     public get isFetching() { return observe(this).isFetching; }
 
-    public whenNotFetching() {
+    public get isSignedIn() { return observe(this).isSignedIn; }
+
+    public get whenNotFetching(): Promise<void> {
+        return new Promise<void>(resolve => {
+            when(() => !this.isFetching, resolve);
+        });
+    }
+
+    public signInWithEmailAndPassword(email: string, password: string): Promise<void> {
         const priv = observe(this);
-        return whenAsync(() => !priv.isFetching);
+        const promise = priv.base.signInWithEmailAndPassword(email, password);
+        priv.isFetching = true;
+        return promise;
+    }
+
+    public signOut(): Promise<void> {
+        const priv = observe(this);
+        const promise = priv.base.signOut();
+        priv.isFetching = true;
+        return promise;
     }
 }
 
@@ -37,20 +53,22 @@ class Private {
     public errorCode = "";
     public hasError = false;
     public isFetching = false;
+    public isSignedIn = false;
     private unsubscribe: firebase.Unsubscribe | null = null;
+    private autoFetchWhenObserved = "localStorage" in window;
 
     constructor(
         public readonly base: firebase.auth.Auth,
     ) {
         this.atom = new Atom(
-            "FireMobApp@" + base.app.name,
+            "FireMobAuth@" + base.app.name,
             this.onBecomeObserved,
             this.onBecomeUnobserved,
         );
     }
 
     private onBecomeObserved = () => {
-        this.isFetching = true;
+        this.isFetching = this.isFetching || this.autoFetchWhenObserved;
         this.unsubscribe = this.base.onIdTokenChanged(
             this.onApplyUser,
             this.onApplyError,
@@ -62,53 +80,44 @@ class Private {
     }
 
     private onApplyUser = (user: firebase.User) => {
-        const { uid } = user;
-        let changed = false;
-
-        if (this.isFetching) {
-            this.isFetching = false;
-            changed = true;
-        }
-
-        if (uid !== this.uid) {
-            this.uid = uid;
-            changed = true;
-        }
-
-        if (this.hasError) {
-            this.hasError = false;
-            changed = true;
-        }
-
-        if (this.errorCode) {
-            this.errorCode = "";
-            changed = true;
-        }
-
-        if (changed) {
-            this.atom.reportChanged();
-        }
+        const isSignedIn = !!user;
+        const uid = isSignedIn ? user.uid : "";
+        const hasError = false;
+        const errorCode = "";
+        this.onApplyData(isSignedIn, uid, hasError, errorCode)
     }
 
+    /* istanbul ignore next */
     private onApplyError = (error: firebase.auth.Error) => {
         const { code } = error;
+        const hasError = true;
+        this.onApplyData(this.isSignedIn, this.uid, hasError, code);
+    }
+
+    private onApplyData(
+        isSignedIn: boolean,
+        uid: string,
+        hasError: boolean,
+        errorCode: string
+    ) {
         let changed = false;
 
-        if (this.isFetching) {
-            this.isFetching = false;
-            changed = true;
+        const assign = <T>(before: T, after: T): T => {
+            if (before !== after) {
+                changed = true;
+            }
+
+            return after;
         }
 
-        if (!this.hasError) {
-            this.hasError = true;
-            changed = true;
-        }
+        this.autoFetchWhenObserved = false;
+        this.isFetching = assign(this.isFetching, false);
+        this.isSignedIn = assign(this.isSignedIn, isSignedIn);
+        this.uid = assign(this.uid, uid);
+        this.hasError = assign(this.hasError, hasError);
+        this.errorCode = assign(this.errorCode, errorCode);
 
-        if (code !== this.errorCode) {
-            this.errorCode = code;
-            changed = true;
-        }
-
+        /* istanbul ignore else */
         if (changed) {
             this.atom.reportChanged();
         }
