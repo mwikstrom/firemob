@@ -1,20 +1,21 @@
-import { IFireMobCollection, IFireMobDocument, IFireMobRoot } from "./api";
-import { FireMobCollection } from "./collection";
-import { FireMobCollectionSource } from "./source";
+import * as firebase from "firebase/app";
+import "firebase/firestore";
 
-export class FireMobDocument<TData extends {}> extends FireMobCollectionSource implements IFireMobDocument<TData> {
-    public readonly root: IFireMobRoot;
-    public readonly data: TData; // TODO!
-
+export class FireMobDocument {
     constructor(
-        public readonly parent: IFireMobCollection<TData>,
-        public readonly id: string,
+        ref: firebase.firestore.DocumentReference,
     ) {
-        super();
-        this.root = parent.root;
+        Private.map.set(this, new Private(ref));
     }
 
-    protected createCollection<TData>(name: string) {
-        return new FireMobCollection<TData>(this.root, name, this);
+    public get ref() { return Private.map.get(this)!.ref; }
+}
+
+class Private {
+    public static map = new WeakMap<FireMobDocument, Private>();
+
+    constructor(
+        public readonly ref: firebase.firestore.DocumentReference,
+    ) {
     }
 }

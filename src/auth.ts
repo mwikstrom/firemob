@@ -3,107 +3,114 @@ import "firebase/auth";
 import { Atom } from "mobx";
 import { whenAsync } from "mobx-utils";
 
-import { IFireMobAuth } from "./api";
-
-export class FireMobAuth implements IFireMobAuth {
-    private readonly _atom: Atom;
-    private _unsubscribe: firebase.Unsubscribe | null = null;
-    private _uid = "";
-    private _errorCode = "";
-    private _hasError = false;
-    private _isFetching = false;
-
-    constructor(private readonly _base: firebase.auth.Auth) {
-        this._atom = new Atom("FireMobAuth", this._onBecomeObserved, this._onBecomeUnobserved);
+export class FireMobAuth {
+    constructor(
+        base: firebase.auth.Auth,
+    ) {
+        Private.map.set(this, new Private(base));
     }
 
-    public get uid() {
-        this._atom.reportObserved();
-        return this._uid;
-    }
+    public get uid() { return observe(this).uid; }
 
-    public get errorCode() {
-        this._atom.reportObserved();
-        return this._errorCode;
-    }
+    public get errorCode() { return observe(this).errorCode; }
 
-    public get hasError() {
-        this._atom.reportObserved();
-        return this._hasError;
-    }
+    public get hasError() { return observe(this).hasError; }
 
-    public get isFetching() {
-        this._atom.reportObserved();
-        return this._isFetching;
-    }
+    public get isFetching() { return observe(this).isFetching; }
 
     public whenNotFetching() {
-        const self = this;
-        return whenAsync(() => !self.isFetching);
+        const priv = observe(this);
+        return whenAsync(() => !priv.isFetching);
     }
+}
 
-    private _onBecomeObserved = () => {
-        this._isFetching = true;
-        this._unsubscribe = this._base.onIdTokenChanged(
-            this._onApplyUser,
-            this._onApplyError,
+const observe = (instance: FireMobAuth) => {
+    const priv = Private.map.get(instance)!;
+    priv.atom.reportObserved();
+    return priv;
+};
+
+class Private {
+    public static map = new WeakMap<FireMobAuth, Private>();
+    public readonly atom: Atom;
+    public uid = "";
+    public errorCode = "";
+    public hasError = false;
+    public isFetching = false;
+    private unsubscribe: firebase.Unsubscribe | null = null;
+
+    constructor(
+        public readonly base: firebase.auth.Auth,
+    ) {
+        this.atom = new Atom(
+            "FireMobApp@" + base.app.name,
+            this.onBecomeObserved,
+            this.onBecomeUnobserved,
         );
     }
 
-    private _onBecomeUnobserved = () => {
-        this._unsubscribe!();
+    private onBecomeObserved = () => {
+        this.isFetching = true;
+        this.unsubscribe = this.base.onIdTokenChanged(
+            this.onApplyUser,
+            this.onApplyError,
+        );
     }
 
-    private _onApplyUser = (user: firebase.User) => {
+    private onBecomeUnobserved = () => {
+        this.unsubscribe!();
+    }
+
+    private onApplyUser = (user: firebase.User) => {
         const { uid } = user;
         let changed = false;
 
-        if (this._isFetching) {
-            this._isFetching = false;
+        if (this.isFetching) {
+            this.isFetching = false;
             changed = true;
         }
 
-        if (uid !== this._uid) {
-            this._uid = uid;
+        if (uid !== this.uid) {
+            this.uid = uid;
             changed = true;
         }
 
-        if (this._hasError) {
-            this._hasError = false;
+        if (this.hasError) {
+            this.hasError = false;
             changed = true;
         }
 
-        if (this._errorCode) {
-            this._errorCode = "";
+        if (this.errorCode) {
+            this.errorCode = "";
             changed = true;
         }
 
         if (changed) {
-            this._atom.reportChanged();
+            this.atom.reportChanged();
         }
     }
 
-    private _onApplyError = (error: firebase.auth.Error) => {
+    private onApplyError = (error: firebase.auth.Error) => {
         const { code } = error;
         let changed = false;
 
-        if (this._isFetching) {
-            this._isFetching = false;
+        if (this.isFetching) {
+            this.isFetching = false;
             changed = true;
         }
 
-        if (!this._hasError) {
-            this._hasError = true;
+        if (!this.hasError) {
+            this.hasError = true;
             changed = true;
         }
 
-        if (code !== this._errorCode) {
-            this._errorCode = code;
+        if (code !== this.errorCode) {
+            this.errorCode = code;
             changed = true;
         }
 
         if (changed) {
-            this._atom.reportChanged();
+            this.atom.reportChanged();
         }
     }
 }
