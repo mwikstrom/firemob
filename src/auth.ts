@@ -84,7 +84,7 @@ class Private {
         const uid = isSignedIn ? user.uid : "";
         const hasError = false;
         const errorCode = "";
-        this.onApplyData(isSignedIn, uid, hasError, errorCode)
+        this.onApplyData(isSignedIn, uid, hasError, errorCode);
     }
 
     /* istanbul ignore next */
@@ -98,7 +98,7 @@ class Private {
         isSignedIn: boolean,
         uid: string,
         hasError: boolean,
-        errorCode: string
+        errorCode: string,
     ) {
         let changed = false;
 
@@ -108,7 +108,7 @@ class Private {
             }
 
             return after;
-        }
+        };
 
         this.autoFetchWhenObserved = false;
         this.isFetching = assign(this.isFetching, false);

@@ -7,9 +7,9 @@ describe("FireMobApp", () => {
         apiKey: "AIzaSyAOJLY7_m7J42DGjrYt1xcXOjE_XMLOoh0",
         authDomain: "firemob-test.firebaseapp.com",
         databaseURL: "https://firemob-test.firebaseio.com",
+        messagingSenderId: "1003051175802",
         projectId: "firemob-test",
         storageBucket: "",
-        messagingSenderId: "1003051175802"
     };
 
     it("can be constructed without arguments", async () => {
@@ -24,7 +24,7 @@ describe("FireMobApp", () => {
         const app = new FireMobApp("test");
         expect(app.name).toBe("test");
         await app.dispose();
-    })
+    });
 
     it("can be constructed with firebase config", async () => {
         const app = new FireMobApp(config);
@@ -39,10 +39,10 @@ describe("FireMobApp", () => {
     });
 
     it("exposes a single auth instance", async () => {
-        const app = new FireMobApp(config)
+        const app = new FireMobApp(config);
         const auth = app.auth;
         expect(auth).toBeInstanceOf(FireMobAuth);
         expect(app.auth).toBe(auth);
         await app.dispose();
-    })
+    });
 });
