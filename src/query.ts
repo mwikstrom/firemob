@@ -1,5 +1,4 @@
 import * as firebase from "firebase/app";
-import "firebase/firestore";
 
 import { Atom, when } from "mobx";
 import { detachDocumentFromQuery, FireMobDocument, populateDocumentFromQuery } from "./document";

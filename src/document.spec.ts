@@ -1,4 +1,5 @@
 import * as firebase from "firebase/app";
+import "firebase/firestore";
 import { observe, reaction } from "mobx";
 
 import { FireMobApp } from "./app";

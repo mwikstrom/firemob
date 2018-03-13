@@ -1,5 +1,4 @@
 import * as firebase from "firebase/app";
-import "firebase/firestore";
 
 import { FireMobAuth } from "./auth";
 import { FireMobCollection } from "./collection";

@@ -1,7 +1,8 @@
 import * as firebase from "firebase/app";
-import "firebase/firestore";
 
-import { Atom, when } from "mobx";
+import { when } from "mobx";
+
+import { PrivateBase } from "./private";
 
 export class FireMobDocument {
     constructor(
@@ -85,55 +86,33 @@ const observe = (doc: FireMobDocument) => {
     return priv;
 };
 
-type Unsubscribe = () => void;
-
-class Private {
+class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
     public static map = new WeakMap<FireMobDocument, Private>();
-    public readonly atom: Atom;
     public hasData = false;
-    public isFetching = false;
     public exists: boolean | null = null;
-    public isFromCache = false;
-    public hasPendingWrites = false;
-    public hasError = false;
-    public errorCode: firebase.firestore.FirestoreErrorCode | null = null;
     public data: firebase.firestore.DocumentData = {};
-    public changeNumber = 0;
-    public syncNumber = 0;
-    private unsubscribe: Unsubscribe | null = null;
     private attachedQueries: firebase.firestore.Query[] = [];
 
     constructor(
         public readonly ref: firebase.firestore.DocumentReference,
     ) {
-        this.atom = new Atom(
-            "FireMobDocument@" + ref.path,
-            this.onBecomeObserved,
-            this.onBecomeUnobserved,
-        );
+        super("FireMobDocument@" + ref.path);
     }
 
     public resume() {
-        if (!this.unsubscribe || !this.hasError || this.attachedQueries.length > 0) {
+        if (this.attachedQueries.length > 0) {
             return;
         }
 
-        this.hasError = false;
-        this.isFetching = true;
-        ++this.changeNumber;
-        this.atom.reportChanged();
-
-        this.unsubscribe();
-        this.subscribe();
+        super.resume();
     }
 
     public populateFromQuery(query: firebase.firestore.Query, snapshot: firebase.firestore.DocumentSnapshot) {
         if (this.attachedQueries.indexOf(query) < 0) {
             this.attachedQueries.push(query);
 
-            if (this.attachedQueries.length === 1 && this.unsubscribe) {
-                this.unsubscribe();
-                this.unsubscribe = null;
+            if (this.attachedQueries.length === 1) {
+                this.stopSubscription();
             }
         }
 
@@ -148,66 +127,44 @@ class Private {
         this.attachedQueries = this.attachedQueries.filter(it => it !== query);
 
         if (this.attachedQueries.length === 0 && this.atom.isBeingTracked) {
-            this.subscribe();
+            this.startSubscription();
         }
     }
 
-    private subscribe() {
-        const options: firebase.firestore.DocumentListenOptions = {
-            includeMetadataChanges: true,
-        };
-
-        /* istanbul ignore else */
+    protected startSubscription() {
         if (!this.hasData) {
             this.isFetching = true;
         }
 
-        this.unsubscribe = this.ref.onSnapshot(
+        super.startSubscription();
+    }
+
+    protected createSubscription(
+        onSnapshot: (snapshot: firebase.firestore.DocumentSnapshot) => void,
+        onError: (error: firebase.firestore.FirestoreError) => void,
+    ) {
+        const options: firebase.firestore.DocumentListenOptions = {
+            includeMetadataChanges: true,
+        };
+
+        return this.ref.onSnapshot(
             options,
-            this.onSnapshot,
-            this.onError,
+            onSnapshot,
+            onError,
         );
     }
 
-    private onBecomeObserved = () => {
+    protected onBecomeObserved() {
         if (this.attachedQueries.length > 0) {
             return;
         }
 
-        this.subscribe();
+        super.onBecomeObserved();
     }
 
-    private onBecomeUnobserved = () => {
-        /* istanbul ignore else */
-        if (this.unsubscribe) {
-            this.unsubscribe();
-            this.unsubscribe = null;
-        }
-    }
-
-    private onSnapshot = (snapshot: firebase.firestore.DocumentSnapshot) => {
-        this.isFetching = false;
+    protected onSnapshot(snapshot: firebase.firestore.DocumentSnapshot) {
         this.hasData = this.exists = snapshot.exists;
-        this.isFromCache = snapshot.metadata.fromCache;
-        this.hasPendingWrites = snapshot.metadata.hasPendingWrites;
         this.data = snapshot.data();
-        this.hasError = false;
-        this.errorCode = null;
-        ++this.changeNumber;
-
-        if (!this.hasPendingWrites && !this.isFromCache) {
-            ++this.syncNumber;
-        }
-
-        this.atom.reportChanged();
-    }
-
-    private onError = (error: firebase.firestore.FirestoreError) => {
-        this.isFetching = false;
-        this.errorCode = error.code;
-        this.hasError = true;
-        ++this.changeNumber;
-        ++this.syncNumber;
-        this.atom.reportChanged();
+        super.onSnapshot(snapshot);
     }
 }
