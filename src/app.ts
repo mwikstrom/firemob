@@ -2,6 +2,7 @@ import * as firebase from "firebase/app";
 import "firebase/firestore";
 
 import { FireMobAuth } from "./auth";
+import { FireMobCollection } from "./collection";
 import { FireMobDocument } from "./document";
 
 export class FireMobApp {
@@ -37,6 +38,12 @@ export class FireMobApp {
         const priv = Private.map.get(this)!;
         const ref = priv.base.firestore().doc(path);
         return new FireMobDocument(ref);
+    }
+
+    public collection(path: string) {
+        const priv = Private.map.get(this)!;
+        const ref = priv.base.firestore().collection(path);
+        return new FireMobCollection(ref);
     }
 }
 

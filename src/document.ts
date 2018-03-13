@@ -56,11 +56,28 @@ export class FireMobDocument {
         });
     }
 
-    public async reset() {
-        observe(this).reset();
+    public async resume() {
+        observe(this).resume();
         await this.whenNotFetching;
     }
 }
+
+export const populateDocumentFromQuery = (
+    doc: FireMobDocument,
+    query: firebase.firestore.Query,
+    snapshot: firebase.firestore.DocumentSnapshot,
+) => {
+    const priv = Private.map.get(doc)!;
+    priv.populateFromQuery(query, snapshot);
+};
+
+export const detachDocumentFromQuery = (
+    doc: FireMobDocument,
+    query: firebase.firestore.Query,
+) => {
+    const priv = Private.map.get(doc)!;
+    priv.detachFromQuery(query);
+};
 
 const observe = (doc: FireMobDocument) => {
     const priv = Private.map.get(doc)!;
@@ -84,6 +101,7 @@ class Private {
     public changeNumber = 0;
     public syncNumber = 0;
     private unsubscribe: Unsubscribe | null = null;
+    private attachedQueries: firebase.firestore.Query[] = [];
 
     constructor(
         public readonly ref: firebase.firestore.DocumentReference,
@@ -95,27 +113,46 @@ class Private {
         );
     }
 
-    public reset() {
-        if (this.unsubscribe && this.hasError) {
-            const options: firebase.firestore.DocumentListenOptions = {
-                includeMetadataChanges: true,
-            };
+    public resume() {
+        if (!this.unsubscribe || !this.hasError || this.attachedQueries.length > 0) {
+            return;
+        }
 
-            this.hasError = false;
-            this.isFetching = true;
-            ++this.changeNumber;
-            this.atom.reportChanged();
+        this.hasError = false;
+        this.isFetching = true;
+        ++this.changeNumber;
+        this.atom.reportChanged();
 
-            this.unsubscribe();
-            this.unsubscribe = this.ref.onSnapshot(
-                options,
-                this.onSnapshot,
-                this.onError,
-            );
+        this.unsubscribe();
+        this.subscribe();
+    }
+
+    public populateFromQuery(query: firebase.firestore.Query, snapshot: firebase.firestore.DocumentSnapshot) {
+        if (this.attachedQueries.indexOf(query) < 0) {
+            this.attachedQueries.push(query);
+
+            if (this.attachedQueries.length === 1 && this.unsubscribe) {
+                this.unsubscribe();
+                this.unsubscribe = null;
+            }
+        }
+
+        this.onSnapshot(snapshot);
+    }
+
+    public detachFromQuery(query: firebase.firestore.Query) {
+        if (this.attachedQueries.length === 0) {
+            return;
+        }
+
+        this.attachedQueries = this.attachedQueries.filter(it => it !== query);
+
+        if (this.attachedQueries.length === 0 && this.atom.isBeingTracked) {
+            this.subscribe();
         }
     }
 
-    private onBecomeObserved = () => {
+    private subscribe() {
         const options: firebase.firestore.DocumentListenOptions = {
             includeMetadataChanges: true,
         };
@@ -130,6 +167,14 @@ class Private {
             this.onSnapshot,
             this.onError,
         );
+    }
+
+    private onBecomeObserved = () => {
+        if (this.attachedQueries.length > 0) {
+            return;
+        }
+
+        this.subscribe();
     }
 
     private onBecomeUnobserved = () => {

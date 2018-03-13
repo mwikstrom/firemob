@@ -81,7 +81,7 @@ describe("FireMobDocument", () => {
 
         it("can be fetched when signed in", async () => {
             await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
-            await doc.reset();
+            await doc.resume();
             expect(doc.isFetching).toBe(false);
             expect(doc.hasData).toBe(true);
             expect(doc.hasError).toBe(false);
@@ -89,7 +89,7 @@ describe("FireMobDocument", () => {
 
         it("subscription fail when signing out", async () => {
             await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
-            await doc.reset();
+            await doc.resume();
             expect(doc.isFetching).toBe(false);
             expect(doc.hasData).toBe(true);
             expect(doc.hasError).toBe(false);
@@ -103,7 +103,7 @@ describe("FireMobDocument", () => {
 
         it("can be re-fetched after signing in", async () => {
             await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
-            await doc.reset();
+            await doc.resume();
             expect(doc.isFetching).toBe(false);
             expect(doc.hasData).toBe(true);
             expect(doc.hasError).toBe(false);
@@ -116,7 +116,7 @@ describe("FireMobDocument", () => {
             expect(doc.errorCode).toBe("permission-denied");
 
             await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
-            doc.reset();
+            doc.resume();
 
             await doc.nextSync;
             expect(doc.isFetching).toBe(false);
@@ -126,7 +126,7 @@ describe("FireMobDocument", () => {
 
         it("can be observed while mutating", async () => {
             await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
-            await doc.reset();
+            await doc.resume();
 
             expect(doc.isFetching).toBe(false);
             expect(doc.hasData).toBe(true);
