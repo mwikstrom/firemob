@@ -91,7 +91,9 @@ class Private {
     private onApplyError = (error: firebase.auth.Error) => {
         const { code } = error;
         const hasError = true;
-        this.onApplyData(this.isSignedIn, this.uid, hasError, code);
+        const isSignedIn = false;
+        const uid = this.uid;
+        this.onApplyData(isSignedIn, uid, hasError, code);
     }
 
     private onApplyData(
