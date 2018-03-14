@@ -1,13 +1,13 @@
 import * as firebase from "firebase/app";
 
 import { FireMobCollection } from "./collection";
-import { FireMobDataObject, PrivateBase } from "./state";
+import { FireMobSnapshotObject, PrivateBase } from "./snapshot";
 
 export interface IFireMobDocumentClass<TDocument extends FireMobDocument> {
     new(ref: firebase.firestore.DocumentReference): TDocument;
 }
 
-export class FireMobDocument extends FireMobDataObject {
+export class FireMobDocument extends FireMobSnapshotObject {
     constructor(
         ref: firebase.firestore.DocumentReference,
     ) {

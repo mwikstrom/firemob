@@ -9,6 +9,8 @@ export class FireMobAuth {
         Private.map.set(this, new Private(base));
     }
 
+    public get base() { return privateOf(this).base; }
+
     public get uid() { return observe(this).uid; }
 
     public get errorCode() { return observe(this).errorCode; }
@@ -40,8 +42,10 @@ export class FireMobAuth {
     }
 }
 
+const privateOf = (instance: FireMobAuth) => Private.map.get(instance)!;
+
 const observe = (instance: FireMobAuth) => {
-    const priv = Private.map.get(instance)!;
+    const priv = privateOf(instance);
     priv.atom.reportObserved();
     return priv;
 };

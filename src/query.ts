@@ -1,7 +1,7 @@
 import * as firebase from "firebase/app";
 
 import { detachDocumentFromQuery, FireMobDocument, populateDocumentFromQuery } from "./document";
-import { FireMobDataObject, PrivateBase } from "./state";
+import { FireMobSnapshotObject, PrivateBase } from "./snapshot";
 
 export type FireMobDocumentFactory<TDocument extends FireMobDocument = FireMobDocument> = (
     ref: firebase.firestore.DocumentReference,
@@ -10,7 +10,7 @@ export type FireMobDocumentFactory<TDocument extends FireMobDocument = FireMobDo
 export class FireMobQuery<
     TRef extends firebase.firestore.Query = firebase.firestore.Query,
     TDocument extends FireMobDocument = FireMobDocument
-> extends FireMobDataObject {
+> extends FireMobSnapshotObject {
     constructor(
         ref: TRef,
         factory: FireMobDocumentFactory<TDocument> = doc => new FireMobDocument(doc) as TDocument,

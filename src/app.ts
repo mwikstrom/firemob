@@ -3,12 +3,30 @@ import * as firebase from "firebase/app";
 import { FireMobAuth } from "./auth";
 import { FireMobCollection } from "./collection";
 import { FireMobDocument, IFireMobDocumentClass } from "./document";
+import { FireMobQuery } from ".";
 
 export class FireMobApp {
     constructor(name?: string)
     constructor(options: {}, name?: string)
     constructor(optionsOrName?: {}, name?: string) {
-        Private.map.set(this, new Private(optionsOrName, name));
+        const priv = new Private(optionsOrName, name);
+        Private.map.set(this, priv);
+        appMap.set(priv.base, this);
+    }
+
+    public static for(doc: FireMobDocument): FireMobApp | null;
+    public static for(collection: FireMobCollection): FireMobApp | null;
+    public static for(auth: FireMobAuth): FireMobApp | null;
+    public static for(query: FireMobQuery): FireMobApp | null;
+    public static for(thing: any): FireMobApp | null {
+        const base = 
+            thing instanceof FireMobDocument ? thing.ref.firestore.app :
+            thing instanceof FireMobCollection ? thing.ref.firestore.app :
+            thing instanceof FireMobAuth ? thing.base.app :
+            thing instanceof FireMobQuery ? (thing.ref as firebase.firestore.Query).firestore.app :
+            null;
+
+        return base && appMap.has(base) ? appMap.get(base)! : null;
     }
 
     public get auth() {
@@ -72,6 +90,8 @@ export class FireMobApp {
         return new FireMobCollection(ref, factory);
     }
 }
+
+const appMap = new WeakMap<firebase.app.App, FireMobApp>();
 
 class Private {
     public static readonly map = new WeakMap<FireMobApp, Private>();

@@ -2,7 +2,7 @@ import * as firebase from "firebase/app";
 
 import { Atom, when } from "mobx";
 
-export abstract class FireMobDataObject {
+export abstract class FireMobSnapshotObject {
     constructor(priv: PrivateBase) {
         PrivateBase.map.set(this, priv);
     }
@@ -50,7 +50,7 @@ export abstract class FireMobDataObject {
 }
 
 export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
-    public static map = new WeakMap<FireMobDataObject, PrivateBase>();
+    public static map = new WeakMap<FireMobSnapshotObject, PrivateBase>();
     public readonly atom: Atom;
     public isFetching = false;
     public isFromCache = false;
@@ -144,10 +144,10 @@ export interface ISnapshot {
     metadata: firebase.firestore.SnapshotMetadata;
 }
 
-const privateOf = (obj: FireMobDataObject) =>
+const privateOf = (obj: FireMobSnapshotObject) =>
     PrivateBase.map.get(obj) as PrivateBase;
 
-const observe = (obj: FireMobDataObject) => {
+const observe = (obj: FireMobSnapshotObject) => {
     const priv = privateOf(obj);
     priv.atom.reportObserved();
     return priv;
