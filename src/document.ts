@@ -1,66 +1,25 @@
 import * as firebase from "firebase/app";
 
-import { when } from "mobx";
+import { FireMobDataObject, PrivateBase } from "./state";
 
-import { PrivateBase } from "./private";
-
-export class FireMobDocument {
+export class FireMobDocument extends FireMobDataObject {
     constructor(
         ref: firebase.firestore.DocumentReference,
     ) {
-        Private.map.set(this, new Private(ref));
+        super(new Private(ref));
     }
 
-    public get ref() { return Private.map.get(this)!.ref; }
+    public get ref() { return privateOf(this).ref; }
 
     public get id() { return this.ref.id; }
 
     public get hasData() { return observe(this).hasData; }
 
-    public get isFetching() { return observe(this).isFetching; }
-
     public get exists() { return observe(this).exists; }
-
-    public get isFromCache() { return observe(this).isFromCache; }
-
-    public get hasPendingWrites() { return observe(this).hasPendingWrites; }
-
-    public get hasError() { return observe(this).hasError; }
-
-    public get errorCode() { return observe(this).errorCode; }
 
     public get data() { return observe(this).data; }
 
-    public get changeNumber() { return observe(this).changeNumber; }
-
-    public get syncNumber() { return observe(this).syncNumber; }
-
     public get(field: string) { return this.data[field]; }
-
-    public get whenNotFetching() {
-        return new Promise(resolve => {
-            when(() => !this.isFetching, resolve);
-        });
-    }
-
-    public get nextChange() {
-        const before = this.changeNumber;
-        return new Promise(resolve => {
-            when(() => this.changeNumber !== before, resolve);
-        });
-    }
-
-    public get nextSync() {
-        const before = this.syncNumber;
-        return new Promise(resolve => {
-            when(() => this.syncNumber !== before, resolve);
-        });
-    }
-
-    public async resume() {
-        observe(this).resume();
-        await this.whenNotFetching;
-    }
 }
 
 export const populateDocumentFromQuery = (
@@ -68,26 +27,26 @@ export const populateDocumentFromQuery = (
     query: firebase.firestore.Query,
     snapshot: firebase.firestore.DocumentSnapshot,
 ) => {
-    const priv = Private.map.get(doc)!;
-    priv.populateFromQuery(query, snapshot);
+    privateOf(doc).populateFromQuery(query, snapshot);
 };
 
 export const detachDocumentFromQuery = (
     doc: FireMobDocument,
     query: firebase.firestore.Query,
 ) => {
-    const priv = Private.map.get(doc)!;
-    priv.detachFromQuery(query);
+    privateOf(doc).detachFromQuery(query);
 };
 
+const privateOf = (doc: FireMobDocument) =>
+    PrivateBase.map.get(doc) as Private;
+
 const observe = (doc: FireMobDocument) => {
-    const priv = Private.map.get(doc)!;
+    const priv = privateOf(doc);
     priv.atom.reportObserved();
     return priv;
 };
 
 class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
-    public static map = new WeakMap<FireMobDocument, Private>();
     public hasData = false;
     public exists: boolean | null = null;
     public data: firebase.firestore.DocumentData = {};
