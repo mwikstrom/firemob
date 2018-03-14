@@ -1,64 +1,25 @@
 import * as firebase from "firebase/app";
 
-import { Atom, when } from "mobx";
 import { detachDocumentFromQuery, FireMobDocument, populateDocumentFromQuery } from "./document";
+import { FireMobDataObject, PrivateBase } from "./state";
 
 export type FireMobDocumentFactory = (ref: firebase.firestore.DocumentReference) => FireMobDocument;
 
-export class FireMobQuery<TRef extends firebase.firestore.Query = firebase.firestore.Query> {
+export class FireMobQuery<TRef extends firebase.firestore.Query = firebase.firestore.Query> extends FireMobDataObject {
     constructor(
         ref: TRef,
         factory: FireMobDocumentFactory = doc => new FireMobDocument(doc),
     ) {
-        Private.map.set(this, new Private(ref, factory));
+        super(new Private(ref, factory));
     }
 
-    public get ref() { return Private.map.get(this)!.ref as TRef; }
+    public get ref() { return privateOf(this).ref as TRef; }
 
     public get hasResult() { return observe(this).hasResult; }
 
     public get size() { return observe(this).size; }
 
-    public get isFetching() { return observe(this).isFetching; }
-
-    public get isFromCache() { return observe(this).isFromCache; }
-
-    public get hasPendingWrites() { return observe(this).hasPendingWrites; }
-
-    public get hasError() { return observe(this).hasError; }
-
-    public get errorCode() { return observe(this).errorCode; }
-
-    public get changeNumber() { return observe(this).changeNumber; }
-
-    public get syncNumber() { return observe(this).syncNumber; }
-
     public get(index: number) { return observe(this).docs[index]; }
-
-    public get whenNotFetching() {
-        return new Promise(resolve => {
-            when(() => !this.isFetching, resolve);
-        });
-    }
-
-    public get nextChange() {
-        const before = this.changeNumber;
-        return new Promise(resolve => {
-            when(() => this.changeNumber !== before, resolve);
-        });
-    }
-
-    public get nextSync() {
-        const before = this.syncNumber;
-        return new Promise(resolve => {
-            when(() => this.syncNumber !== before, resolve);
-        });
-    }
-
-    public async resume() {
-        observe(this).resume();
-        await this.whenNotFetching;
-    }
 
     public endAt(...values: any[]) { return extend(this, ref => ref.endAt(...values)); }
 
@@ -93,104 +54,73 @@ export class FireMobQuery<TRef extends firebase.firestore.Query = firebase.fires
 }
 
 const extend = (query: FireMobQuery, how: (ref: firebase.firestore.Query) => firebase.firestore.Query) => {
-    const priv = Private.map.get(query)!;
+    const priv = privateOf(query);
     return new FireMobQuery(
         how(priv.ref),
         priv.factory,
     );
 };
 
-const observe = (doc: FireMobQuery) => {
-    const priv = Private.map.get(doc)!;
+const privateOf = (query: FireMobQuery) =>
+    PrivateBase.map.get(query) as Private;
+
+const observe = (query: FireMobQuery) => {
+    const priv = privateOf(query);
     priv.atom.reportObserved();
     return priv;
 };
 
-type Unsubscribe = () => void;
-
-class Private {
-    public static map = new WeakMap<FireMobQuery, Private>();
-    public readonly atom: Atom;
+class Private extends PrivateBase<firebase.firestore.QuerySnapshot> {
     public hasResult = false;
     public size = 0;
-    public isFetching = false;
-    public isFromCache = false;
-    public hasPendingWrites = false;
-    public hasError = false;
-    public errorCode: firebase.firestore.FirestoreErrorCode | null = null;
-    public changeNumber = 0;
-    public syncNumber = 0;
     public docs: FireMobDocument[] = [];
-    private unsubscribe: Unsubscribe | null = null;
 
     constructor(
         public readonly ref: firebase.firestore.Query,
         public readonly factory: FireMobDocumentFactory,
     ) {
-        this.atom = new Atom(
-            ref instanceof firebase.firestore.CollectionReference ? "FireMobCollection@" + ref.path : "FireMobQuery",
-            this.onBecomeObserved,
-            this.onBecomeUnobserved,
-        );
+        super(ref instanceof firebase.firestore.CollectionReference ? "FireMobCollection@" + ref.path : "FireMobQuery");
     }
 
     public resume() {
-        if (this.unsubscribe && this.hasError) {
-            const options: firebase.firestore.QueryListenOptions = {
-                includeDocumentMetadataChanges: true,
-                includeQueryMetadataChanges: true,
-            };
-
-            this.hasError = false;
+        if (this.hasError) {
             this.size = 0;
             this.docs = [];
-            this.isFetching = true;
+            this.hasResult = false;
             ++this.changeNumber;
             this.atom.reportChanged();
-
-            this.unsubscribe();
-            this.unsubscribe = this.ref.onSnapshot(
-                options,
-                this.onSnapshot,
-                this.onError,
-            );
         }
+
+        super.resume();
     }
 
-    private onBecomeObserved = () => {
+    protected startSubscription() {
+        if (!this.hasResult) {
+            this.isFetching = true;
+        }
+
+        super.startSubscription();
+    }
+
+    protected createSubscription(
+        onSnapshot: (snapshot: firebase.firestore.QuerySnapshot) => void,
+        onError: (error: firebase.firestore.FirestoreError) => void,
+    ) {
         const options: firebase.firestore.QueryListenOptions = {
             includeDocumentMetadataChanges: true,
             includeQueryMetadataChanges: true,
         };
 
-        /* istanbul ignore else */
-        if (!this.hasResult) {
-            this.isFetching = true;
-        }
-
-        this.unsubscribe = this.ref.onSnapshot(
+        return this.ref.onSnapshot(
             options,
-            this.onSnapshot,
-            this.onError,
+            onSnapshot,
+            onError,
         );
     }
 
-    private onBecomeUnobserved = () => {
-        /* istanbul ignore else */
-        if (this.unsubscribe) {
-            this.unsubscribe();
-            this.unsubscribe = null;
-        }
-    }
-
-    private onSnapshot = (snapshot: firebase.firestore.QuerySnapshot) => {
-        this.isFetching = false;
+    protected onSnapshot(snapshot: firebase.firestore.QuerySnapshot) {
         this.hasResult = true;
         this.size = snapshot.size;
-        this.isFromCache = snapshot.metadata.fromCache;
-        this.hasPendingWrites = snapshot.metadata.hasPendingWrites;
-        this.hasError = false;
-        this.errorCode = null;
 
         snapshot.docChanges.forEach(change => {
             let doc: FireMobDocument | null = null;
@@ -220,24 +150,14 @@ class Private {
             ++this.changeNumber;
         });
 
-        if (!this.hasPendingWrites && !this.isFromCache) {
-            ++this.syncNumber;
-        }
-
-        this.atom.reportChanged();
+        super.onSnapshot(snapshot);
     }
 
-    private onError = (error: firebase.firestore.FirestoreError) => {
-        this.isFetching = false;
-        this.errorCode = error.code;
-        this.hasError = true;
-        ++this.changeNumber;
-        ++this.syncNumber;
-
+    protected onError(error: firebase.firestore.FirestoreError) {
         this.docs.forEach(doc => {
             detachDocumentFromQuery(doc, this.ref);
         });
 
-        this.atom.reportChanged();
+        super.onError(error);
     }
 }

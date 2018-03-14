@@ -116,10 +116,11 @@ describe("FireMobDocument", () => {
             expect(doc.hasError).toBe(true);
             expect(doc.errorCode).toBe("permission-denied");
 
+            const nextSync = doc.nextSync;
             await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
-            doc.resume();
+            await doc.resume();
 
-            await doc.nextSync;
+            await nextSync;
             expect(doc.isFetching).toBe(false);
             expect(doc.hasData).toBe(true);
             expect(doc.hasError).toBe(false);

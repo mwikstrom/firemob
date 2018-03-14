@@ -58,14 +58,6 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
         super("FireMobDocument@" + ref.path);
     }
 
-    public resume() {
-        if (this.attachedQueries.length > 0) {
-            return;
-        }
-
-        super.resume();
-    }
-
     public populateFromQuery(query: firebase.firestore.Query, snapshot: firebase.firestore.DocumentSnapshot) {
         if (this.attachedQueries.indexOf(query) < 0) {
             this.attachedQueries.push(query);
@@ -88,6 +80,14 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
         if (this.attachedQueries.length === 0 && this.atom.isBeingTracked) {
             this.startSubscription();
         }
+    }
+
+    public resume() {
+        if (this.attachedQueries.length > 0) {
+            return;
+        }
+
+        super.resume();
     }
 
     protected startSubscription() {
