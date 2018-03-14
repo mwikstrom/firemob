@@ -2,7 +2,7 @@ import * as firebase from "firebase/app";
 
 import { FireMobAuth } from "./auth";
 import { FireMobCollection } from "./collection";
-import { FireMobDocument } from "./document";
+import { FireMobDocument, IFireMobDocumentClass } from "./document";
 
 export class FireMobApp {
     constructor(name?: string)
@@ -33,16 +33,43 @@ export class FireMobApp {
         return Private.map.get(this)!.base.delete();
     }
 
-    public doc(path: string) {
+    public doc(path: string): FireMobDocument;
+    public doc<TDocument extends FireMobDocument>(
+        path: string,
+        documentClass: IFireMobDocumentClass<TDocument>,
+    ): TDocument;
+    public doc<TDocument extends FireMobDocument>(
+        path: string,
+        documentClass?: IFireMobDocumentClass<TDocument>,
+    ) {
+        if (!documentClass) {
+            documentClass = FireMobDocument as IFireMobDocumentClass<TDocument>;
+        }
+
         const priv = Private.map.get(this)!;
         const ref = priv.base.firestore().doc(path);
-        return new FireMobDocument(ref);
+
+        return new documentClass(ref);
     }
 
-    public collection(path: string) {
+    public collection(path: string): FireMobCollection;
+    public collection<TDocument extends FireMobDocument>(
+        path: string,
+        documentClass: IFireMobDocumentClass<TDocument>,
+    ): FireMobCollection<TDocument>;
+    public collection<TDocument extends FireMobDocument>(
+        path: string,
+        documentClass?: IFireMobDocumentClass<TDocument>,
+    ) {
+        if (!documentClass) {
+            documentClass = FireMobDocument as IFireMobDocumentClass<TDocument>;
+        }
+
+        const factory = (arg: firebase.firestore.DocumentReference) => new documentClass!(arg);
         const priv = Private.map.get(this)!;
         const ref = priv.base.firestore().collection(path);
-        return new FireMobCollection(ref);
+
+        return new FireMobCollection(ref, factory);
     }
 }
 

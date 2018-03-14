@@ -2,6 +2,10 @@ import * as firebase from "firebase/app";
 
 import { FireMobDataObject, PrivateBase } from "./state";
 
+export interface IFireMobDocumentClass<TDocument extends FireMobDocument> {
+    new(ref: firebase.firestore.DocumentReference): TDocument;
+}
+
 export class FireMobDocument extends FireMobDataObject {
     constructor(
         ref: firebase.firestore.DocumentReference,
