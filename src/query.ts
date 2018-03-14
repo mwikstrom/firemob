@@ -38,17 +38,17 @@ export class FireMobQuery<
         return result;
     }
 
-    public endAt(...values: any[]) { return extend(this, ref => ref.endAt(...values)); }
+    public endAt(...values: any[]) { return extend<TRef, TDocument>(this, ref => ref.endAt(...values)); }
 
-    public endBefore(...values: any[]) { return extend(this, ref => ref.endBefore(...values)); }
+    public endBefore(...values: any[]) { return extend<TRef, TDocument>(this, ref => ref.endBefore(...values)); }
 
-    public limit(count: number) { return extend(this, ref => ref.limit(count)); }
+    public limit(count: number) { return extend<TRef, TDocument>(this, ref => ref.limit(count)); }
 
     public orderBy(
         path: string | firebase.firestore.FieldPath,
         direction: firebase.firestore.OrderByDirection = "asc",
     ) {
-        return extend(this, ref => ref.orderBy(path, direction));
+        return extend<TRef, TDocument>(this, ref => ref.orderBy(path, direction));
     }
 
     public orderByDescending(
@@ -70,22 +70,28 @@ export class FireMobQuery<
         return this.orderById("desc");
     }
 
-    public startAfter(...values: any[]) { return extend(this, ref => ref.startAfter(...values)); }
+    public startAfter(...values: any[]) { return extend<TRef, TDocument>(this, ref => ref.startAfter(...values)); }
 
-    public startAt(...values: any[]) { return extend(this, ref => ref.startAt(...values)); }
+    public startAt(...values: any[]) { return extend<TRef, TDocument>(this, ref => ref.startAt(...values)); }
 
     public where(
         path: string | firebase.firestore.FieldPath,
         op: firebase.firestore.WhereFilterOp,
         value: any,
     ) {
-        return extend(this, ref => ref.where(path, op, value));
+        return extend<TRef, TDocument>(this, ref => ref.where(path, op, value));
     }
 }
 
-const extend = (query: FireMobQuery, how: (ref: firebase.firestore.Query) => firebase.firestore.Query) => {
+const extend = <
+    TRef extends firebase.firestore.Query,
+    TDocument extends FireMobDocument
+>(
+    query: FireMobQuery<TRef, TDocument>, 
+    how: (ref: TRef) => firebase.firestore.Query
+) => {
     const priv = privateOf(query);
-    return new FireMobQuery(
+    return new FireMobQuery<firebase.firestore.Query, TDocument>(
         how(priv.ref),
         priv.factory,
     );
