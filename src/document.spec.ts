@@ -24,7 +24,7 @@ describe("FireMobDocument", () => {
             const id = "a";
             const path = "test/" + id;
 
-            app = new FireMobApp(config);
+            app = new FireMobApp(config, "document-test-" + Math.round(Math.random() * 10000));
             doc = app.doc(path);
             stop = reaction(() => doc.changeNumber, () => { /* no-op */ });
 

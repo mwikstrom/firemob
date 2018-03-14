@@ -57,6 +57,19 @@ export class FireMobQuery<
         return this.orderBy(path, "desc");
     }
 
+    public orderById(
+        direction: firebase.firestore.OrderByDirection = "asc",
+    ) {
+        return this.orderBy(
+            firebase.firestore.FieldPath.documentId(),
+            direction,
+        );
+    }
+
+    public orderByDescendingId() {
+        return this.orderById("desc");
+    }
+
     public startAfter(...values: any[]) { return extend(this, ref => ref.startAfter(...values)); }
 
     public startAt(...values: any[]) { return extend(this, ref => ref.startAt(...values)); }
