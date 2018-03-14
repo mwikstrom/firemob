@@ -48,7 +48,7 @@ describe("FireMobCollection", () => {
         expect(q.get(4).id).toBe("e");
     });
 
-    it("Can fetch all non-wovels in descending alphabetical order after signing in __DEBUG__", async () => {
+    it("Can fetch all non-wovels in descending alphabetical order after signing in", async () => {
         await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
 
         const q = col.orderByDescendingId().where("wovel", "==", false);
@@ -73,5 +73,42 @@ describe("FireMobCollection", () => {
         expect(q.length).toBe(2);
         expect(q.get(0).id).toBe("e");
         expect(q.get(1).id).toBe("a");
+    });
+
+    it("Query is broken when signing out but wovel is still observable", async () => {
+        await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
+
+        const q = col.orderById();
+        await q.whenNotFetching;
+
+        expect(q.length).toBe(5);
+        expect(q.get(0).id).toBe("a");
+        expect(q.get(1).id).toBe("b");
+        expect(q.get(2).id).toBe("c");
+        expect(q.get(3).id).toBe("d");
+        expect(q.get(4).id).toBe("e");
+
+        const a = q.get(0);
+        let valueOfA = 0;
+        const stopObservingA = reaction(
+            () => a.get("value"),
+            value => valueOfA = value,
+            true,
+        );
+
+        await Promise.all([
+            app.auth.signOut(),
+            q.nextChange,
+        ]);
+
+        expect(q.hasError).toBe(true);
+
+        const before = valueOfA;
+        const newValue = Math.round(Math.random() * 100000);
+        a.ref.update({ value: newValue });
+
+        await a.nextSync;
+
+        expect(valueOfA).toBe(newValue);
     });
 });
