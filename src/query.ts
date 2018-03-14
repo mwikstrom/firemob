@@ -87,8 +87,8 @@ const extend = <
     TRef extends firebase.firestore.Query,
     TDocument extends FireMobDocument
 >(
-    query: FireMobQuery<TRef, TDocument>, 
-    how: (ref: TRef) => firebase.firestore.Query
+    query: FireMobQuery<TRef, TDocument>,
+    how: (ref: TRef) => firebase.firestore.Query,
 ) => {
     const priv = privateOf(query);
     return new FireMobQuery<firebase.firestore.Query, TDocument>(
