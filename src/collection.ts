@@ -1,7 +1,7 @@
 import * as firebase from "firebase/app";
 
 import { FireMobDocument } from "./document";
-import { FireMobDocumentFactory, FireMobQuery } from "./query";
+import { createDocument, FireMobDocumentFactory, FireMobQuery } from "./query";
 
 export class FireMobCollection<
     TDocument extends FireMobDocument = FireMobDocument
@@ -14,4 +14,6 @@ export class FireMobCollection<
     }
 
     public get id() { return this.ref.id; }
+
+    public doc(path: string) { return createDocument(this, path); }
 }

@@ -91,6 +91,17 @@ const extend = (query: FireMobQuery, how: (ref: firebase.firestore.Query) => fir
     );
 };
 
+export const createDocument = <
+    TDocument extends FireMobDocument
+>(
+    query: FireMobQuery<firebase.firestore.CollectionReference, TDocument>,
+    path: string,
+) => {
+    const priv = privateOf(query);
+    const ref = priv.ref.doc(path);
+    return priv.factory(ref);
+};
+
 const privateOf = <
     TRef extends firebase.firestore.Query,
     TDocument extends FireMobDocument

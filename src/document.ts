@@ -1,5 +1,6 @@
 import * as firebase from "firebase/app";
 
+import { FireMobCollection } from "./collection";
 import { FireMobDataObject, PrivateBase } from "./state";
 
 export interface IFireMobDocumentClass<TDocument extends FireMobDocument> {
@@ -27,6 +28,25 @@ export class FireMobDocument extends FireMobDataObject {
 
     public get isSubscriptionActive() {
         return super.isSubscriptionActive || privateOf(this).attachedQueries.length > 0;
+    }
+
+    public collection(path: string): FireMobCollection;
+    public collection<TDocument extends FireMobDocument>(
+        path: string,
+        documentClass: IFireMobDocumentClass<TDocument>,
+    ): FireMobCollection<TDocument>;
+    public collection<TDocument extends FireMobDocument>(
+        path: string,
+        documentClass?: IFireMobDocumentClass<TDocument>,
+    ) {
+        if (!documentClass) {
+            documentClass = FireMobDocument as IFireMobDocumentClass<TDocument>;
+        }
+
+        const factory = (arg: firebase.firestore.DocumentReference) => new documentClass!(arg);
+        const ref = this.ref.collection(path);
+
+        return new FireMobCollection(ref, factory);
     }
 }
 
