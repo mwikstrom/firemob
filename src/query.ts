@@ -3,23 +3,40 @@ import * as firebase from "firebase/app";
 import { detachDocumentFromQuery, FireMobDocument, populateDocumentFromQuery } from "./document";
 import { FireMobDataObject, PrivateBase } from "./state";
 
-export type FireMobDocumentFactory = (ref: firebase.firestore.DocumentReference) => FireMobDocument;
+export type FireMobDocumentFactory<TDocument extends FireMobDocument = FireMobDocument> = (
+    ref: firebase.firestore.DocumentReference,
+) => TDocument;
 
-export class FireMobQuery<TRef extends firebase.firestore.Query = firebase.firestore.Query> extends FireMobDataObject {
+export class FireMobQuery<
+    TRef extends firebase.firestore.Query = firebase.firestore.Query,
+    TDocument extends FireMobDocument = FireMobDocument
+> extends FireMobDataObject {
     constructor(
         ref: TRef,
-        factory: FireMobDocumentFactory = doc => new FireMobDocument(doc),
+        factory: FireMobDocumentFactory<TDocument> = doc => new FireMobDocument(doc) as TDocument,
     ) {
         super(new Private(ref, factory));
     }
 
-    public get ref() { return privateOf(this).ref as TRef; }
+    public get ref() { return privateOf<TRef, TDocument>(this).ref; }
 
-    public get hasResult() { return observe(this).hasResult; }
+    public get hasResult() { return observe<TRef, TDocument>(this).hasResult; }
 
-    public get size() { return observe(this).size; }
+    public get length() { return observe<TRef, TDocument>(this).length; }
 
-    public get(index: number) { return observe(this).docs[index]; }
+    public get(index: number) { return observe<TRef, TDocument>(this).docs[index]; }
+
+    public map<TResult>(mapper: (doc: TDocument, index: number) => TResult) {
+        const length = this.length;
+        const result = new Array<TResult>(length);
+
+        for (let index = 0; index < length; ++index) {
+            const doc = this.get(index);
+            result[index] = mapper(doc, index);
+        }
+
+        return result;
+    }
 
     public endAt(...values: any[]) { return extend(this, ref => ref.endAt(...values)); }
 
@@ -61,30 +78,42 @@ const extend = (query: FireMobQuery, how: (ref: firebase.firestore.Query) => fir
     );
 };
 
-const privateOf = (query: FireMobQuery) =>
-    PrivateBase.map.get(query) as Private;
+const privateOf = <
+    TRef extends firebase.firestore.Query,
+    TDocument extends FireMobDocument
+>(
+    query: FireMobQuery<TRef, TDocument>,
+) => PrivateBase.map.get(query) as Private<TRef, TDocument>;
 
-const observe = (query: FireMobQuery) => {
+const observe = <
+    TRef extends firebase.firestore.Query,
+    TDocument extends FireMobDocument
+>(
+    query: FireMobQuery<TRef, TDocument>,
+) => {
     const priv = privateOf(query);
     priv.atom.reportObserved();
     return priv;
 };
 
-class Private extends PrivateBase<firebase.firestore.QuerySnapshot> {
+class Private<
+    TRef extends firebase.firestore.Query,
+    TDocument extends FireMobDocument
+> extends PrivateBase<firebase.firestore.QuerySnapshot> {
     public hasResult = false;
-    public size = 0;
-    public docs: FireMobDocument[] = [];
+    public length = 0;
+    public docs: TDocument[] = [];
 
     constructor(
-        public readonly ref: firebase.firestore.Query,
-        public readonly factory: FireMobDocumentFactory,
+        public readonly ref: TRef,
+        public readonly factory: FireMobDocumentFactory<TDocument>,
     ) {
         super(ref instanceof firebase.firestore.CollectionReference ? "FireMobCollection@" + ref.path : "FireMobQuery");
     }
 
     public resume() {
         if (this.hasError) {
-            this.size = 0;
+            this.length = 0;
             this.docs = [];
             this.hasResult = false;
             ++this.changeNumber;
@@ -120,10 +149,10 @@ class Private extends PrivateBase<firebase.firestore.QuerySnapshot> {
 
     protected onSnapshot(snapshot: firebase.firestore.QuerySnapshot) {
         this.hasResult = true;
-        this.size = snapshot.size;
+        this.length = snapshot.size;
 
         snapshot.docChanges.forEach(change => {
-            let doc: FireMobDocument | null = null;
+            let doc: TDocument | null = null;
             const keepPosition = change.oldIndex === change.newIndex;
 
             if (change.oldIndex >= 0) {
