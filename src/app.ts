@@ -1,25 +1,13 @@
 import * as firebase from "firebase/app";
 
+import { FireMobQuery } from ".";
 import { FireMobAuth } from "./auth";
 import { FireMobCollection } from "./collection";
 import { FireMobDocument, IFireMobDocumentClass } from "./document";
-import { FireMobQuery } from ".";
 
 export class FireMobApp {
-    constructor(name?: string)
-    constructor(options: {}, name?: string)
-    constructor(optionsOrName?: {}, name?: string) {
-        const priv = new Private(optionsOrName, name);
-        Private.map.set(this, priv);
-        appMap.set(priv.base, this);
-    }
-
-    public static for(doc: FireMobDocument): FireMobApp | null;
-    public static for(collection: FireMobCollection): FireMobApp | null;
-    public static for(auth: FireMobAuth): FireMobApp | null;
-    public static for(query: FireMobQuery): FireMobApp | null;
-    public static for(thing: any): FireMobApp | null {
-        const base = 
+    public static for(thing: FireMobAuth | FireMobQuery | FireMobDocument): FireMobApp | null {
+        const base =
             thing instanceof FireMobDocument ? thing.ref.firestore.app :
             thing instanceof FireMobCollection ? thing.ref.firestore.app :
             thing instanceof FireMobAuth ? thing.base.app :
@@ -27,6 +15,14 @@ export class FireMobApp {
             null;
 
         return base && appMap.has(base) ? appMap.get(base)! : null;
+    }
+
+    constructor(name?: string)
+    constructor(options: {}, name?: string)
+    constructor(optionsOrName?: {}, name?: string) {
+        const priv = new Private(optionsOrName, name);
+        Private.map.set(this, priv);
+        appMap.set(priv.base, this);
     }
 
     public get auth() {
