@@ -20,6 +20,10 @@ export class FireMobDocument extends FireMobDataObject {
     public get data() { return observe(this).data; }
 
     public get(field: string) { return this.data[field]; }
+
+    public get isSubscriptionActive() {
+        return super.isSubscriptionActive || privateOf(this).attachedQueries.length > 0;
+    }
 }
 
 export const populateDocumentFromQuery = (
@@ -37,8 +41,7 @@ export const detachDocumentFromQuery = (
     privateOf(doc).detachFromQuery(query);
 };
 
-const privateOf = (doc: FireMobDocument) =>
-    PrivateBase.map.get(doc) as Private;
+const privateOf = (doc: FireMobDocument): Private => PrivateBase.map.get(doc) as Private;
 
 const observe = (doc: FireMobDocument) => {
     const priv = privateOf(doc);
@@ -50,7 +53,7 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
     public hasData = false;
     public exists: boolean | null = null;
     public data: firebase.firestore.DocumentData = {};
-    private attachedQueries: firebase.firestore.Query[] = [];
+    public attachedQueries: firebase.firestore.Query[] = [];
 
     constructor(
         public readonly ref: firebase.firestore.DocumentReference,

@@ -21,6 +21,8 @@ export abstract class FireMobDataObject {
 
     public get syncNumber() { return observe(this).syncNumber; }
 
+    public get isSubscriptionActive() { return privateOf(this).atom.isBeingTracked; }
+
     public get whenNotFetching() {
         return new Promise(resolve => {
             when(() => !this.isFetching, resolve);

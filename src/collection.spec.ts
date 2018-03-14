@@ -89,6 +89,8 @@ describe("FireMobCollection", () => {
         expect(q.get(4).id).toBe("e");
 
         const a = q.get(0);
+        expect(a.isSubscriptionActive).toBe(true);
+
         let valueOfA = 0;
         const stopObservingA = reaction(
             () => a.get("value"),
@@ -96,12 +98,14 @@ describe("FireMobCollection", () => {
             true,
         );
 
-        await Promise.all([
-            app.auth.signOut(),
-            q.nextChange,
-        ]);
+        await app.auth.signOut();
 
-        expect(q.hasError).toBe(true);
+        while (!q.hasError) {
+            await q.nextSync;
+        }
+
+        expect(q.errorCode).toBe("permission-denied");
+        expect(a.isSubscriptionActive).toBe(true);
 
         const before = valueOfA;
         const newValue = Math.round(Math.random() * 100000);
