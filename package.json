@@ -2,8 +2,8 @@
   "name": "firemob",
   "version": "0.4.3",
   "description": "Observable data for Firebase using MobX",
-  "main": "dist/es6/index.js",
-  "types": "dist/es6/index.d.ts",
+  "main": "dist/es5/index.js",
+  "types": "dist/es5/index.d.ts",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
