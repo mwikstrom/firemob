@@ -2,17 +2,18 @@
   "name": "firemob",
   "version": "0.4.2",
   "description": "Observable data for Firebase using MobX",
-  "main": "dist/firemob.js",
-  "types": "dist/firemob.d.ts",
+  "main": "dist/es6/index.js",
+  "types": "dist/es6/index.d.ts",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
     "test:nocoverage": "jest --coverage false",
     "test:debug": "jest --coverage false -t __DEBUG__",
-    "build": "webpack",
+    "build": "webpack && tsc --outDir dist/es6 --declaration --sourceMap --inlineSources && babel dist/es6 --out-dir dist/es5 --source-maps --copy-files",
     "lint": "tslint --format stylish src/*.ts src/**/*.ts",
     "lint:fix": "tslint --format stylish --fix src/*.ts src/**/*.ts",
     "report-coverage": "minicat coverage/lcov.info | coveralls",
+    "prepublishOnly": "npm run check",
     "check": "npm run lint:fix && npm run build && npm run test"
   },
   "repository": {
@@ -56,6 +57,8 @@
   },
   "devDependencies": {
     "@types/jest": "^22.2.0",
+    "@types/node": "^9.4.7",
+    "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.4",
     "babel-plugin-transform-runtime": "^6.23.0",
@@ -63,7 +66,6 @@
     "babel-preset-stage-2": "^6.24.1",
     "clean-webpack-plugin": "^0.1.19",
     "coveralls": "^3.0.0",
-    "dts-bundle": "^0.7.3",
     "jest": "^22.4.2",
     "minicat": "^1.0.0",
     "ts-jest": "^22.4.1",

@@ -7,7 +7,7 @@ const LIBRARY_NAME = "FireMob";
 module.exports = {
     entry: "./src/index.ts",
     output: {
-        path: path.resolve(__dirname, "dist"),
+        path: path.resolve(__dirname, "dist/umd"),
         filename: "firemob.js",
         library: LIBRARY_NAME,
         libraryTarget: "umd"
@@ -34,25 +34,9 @@ module.exports = {
     },
     plugins: [
         new CleanWebpackPlugin(["dist"]),
-        new DtsBundlePlugin(),
         new webpack.optimize.UglifyJsPlugin({
             minimize: true,
             sourceMap: true
         })
     ]
-};
-
-function DtsBundlePlugin(){}
-DtsBundlePlugin.prototype.apply = function (compiler) {
-  compiler.plugin('done', function(){
-    var dts = require('dts-bundle');
-
-    dts.bundle({
-      name: LIBRARY_NAME,
-      main: path.resolve(__dirname, "dist/index.d.ts"),
-      out: path.resolve(__dirname, "dist/firemob.d.ts"),
-      removeSource: true,
-      outputAsModuleFolder: true
-    });
-  });
 };
