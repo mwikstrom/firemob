@@ -1,9 +1,10 @@
 import * as firebase from "firebase/app";
 import "firebase/firestore";
-import { observe, reaction } from "mobx";
+import { autorun, observe } from "mobx";
 
 import { FireMobApp } from "./app";
 import { FireMobDocument } from "./document";
+import { Unsubscribe } from "./snapshot";
 
 describe("FireMobDocument", () => {
     const config = {
@@ -18,7 +19,6 @@ describe("FireMobDocument", () => {
     describe("public document a", () => {
         let app: FireMobApp;
         let doc: FireMobDocument;
-        let stop: () => void = null;
 
         beforeEach(async () => {
             const id = "a";
@@ -26,7 +26,6 @@ describe("FireMobDocument", () => {
 
             app = new FireMobApp(config, "document-test-" + Math.round(Math.random() * 10000));
             doc = app.doc(path);
-            stop = reaction(() => doc.changeNumber, () => { /* no-op */ });
 
             expect(doc.id).toBe(id);
             expect(doc.ref.path).toBe(path);
@@ -37,7 +36,6 @@ describe("FireMobDocument", () => {
         });
 
         afterEach(async () => {
-            stop();
             await app.dispose();
         });
 
@@ -51,7 +49,8 @@ describe("FireMobDocument", () => {
     describe("private document b", async () => {
         let app: FireMobApp;
         let doc: FireMobDocument;
-        let stop: () => void = null;
+        let cno = 0;
+        let stop: Unsubscribe;
 
         beforeEach(async () => {
             const id = "b";
@@ -59,7 +58,7 @@ describe("FireMobDocument", () => {
 
             app = new FireMobApp(config);
             doc = app.doc(path);
-            stop = reaction(() => doc.changeNumber, () => { /* no-op */ });
+            stop = autorun(() => cno = doc.changeNumber);
 
             expect(doc.id).toBe(id);
             expect(doc.ref.path).toBe(path);
@@ -70,8 +69,8 @@ describe("FireMobDocument", () => {
         });
 
         afterEach(async () => {
-            stop();
             await app.dispose();
+            stop();
         });
 
         it("cannot be fetched when not signed in", async () => {
@@ -154,7 +153,8 @@ describe("FireMobDocument", () => {
     describe("non-existing document c", () => {
         let app: FireMobApp;
         let doc: FireMobDocument;
-        let stop: () => void = null;
+        let stop: Unsubscribe;
+        let cno = 0;
 
         beforeEach(async () => {
             const id = "c";
@@ -162,7 +162,7 @@ describe("FireMobDocument", () => {
 
             app = new FireMobApp(config);
             doc = app.doc(path);
-            stop = reaction(() => doc.changeNumber, () => { /* no-op */ });
+            stop = autorun(() => cno = doc.changeNumber);
 
             expect(doc.id).toBe(id);
             expect(doc.ref.path).toBe(path);

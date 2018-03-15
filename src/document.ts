@@ -89,7 +89,7 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
         if (this.attachedQueries.indexOf(query) < 0) {
             this.attachedQueries.push(query);
 
-            if (this.attachedQueries.length === 1) {
+            if (this.attachedQueries.length === 1 && this.isSubscriptionActive) {
                 this.stopSubscription();
             }
         }
@@ -104,8 +104,10 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
 
         this.attachedQueries = this.attachedQueries.filter(it => it !== query);
 
-        if (this.attachedQueries.length === 0 && this.atom.isBeingTracked) {
+        if (this.attachedQueries.length === 0 && this.atom.isBeingTracked && !this.isSubscriptionActive) {
             this.startSubscription();
+            ++this.changeNumber;
+            this.atom.reportChanged();
         }
     }
 
@@ -118,7 +120,7 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
     }
 
     protected startSubscription() {
-        if (!this.hasData) {
+        if (!this.hasData && !this.isSubscriptionActive) {
             this.isFetching = true;
         }
 
@@ -133,11 +135,13 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
             includeMetadataChanges: true,
         };
 
-        return this.ref.onSnapshot(
+        const unsubscribe = this.ref.onSnapshot(
             options,
             onSnapshot,
             onError,
         );
+
+        return unsubscribe;
     }
 
     protected onBecomeObserved() {

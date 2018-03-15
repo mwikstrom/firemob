@@ -1,9 +1,10 @@
 import * as firebase from "firebase/app";
 import "firebase/firestore";
 
-import { reaction } from "mobx";
+import { autorun } from "mobx";
 import { FireMobApp } from "./app";
 import { FireMobCollection } from "./collection";
+import { Unsubscribe } from "./snapshot";
 
 describe("FireMobCollection", () => {
     const config = {
@@ -17,21 +18,18 @@ describe("FireMobCollection", () => {
 
     let app: FireMobApp;
     let col: FireMobCollection;
-    let stop: () => void = null;
 
     beforeEach(async () => {
         const path = "letters";
 
         app = new FireMobApp(config, "collection-test-" + Math.round(Math.random() * 10000));
         col = app.collection(path);
-        stop = reaction(() => col.changeNumber, () => { /* no-op */ });
 
         expect(col.id).toBe(path);
         expect(col.ref.path).toBe(path);
     });
 
     afterEach(async () => {
-        stop();
         await app.dispose();
     });
 
@@ -79,6 +77,8 @@ describe("FireMobCollection", () => {
         await app.auth.signInWithEmailAndPassword("noone@nowhere.com", "password");
 
         const q = col.orderById();
+        let cno = 0;
+        const stopObservingQ = autorun(() => cno = q.changeNumber);
         await q.whenNotFetching;
 
         expect(q.length).toBe(5);
@@ -92,11 +92,7 @@ describe("FireMobCollection", () => {
         expect(a.isSubscriptionActive).toBe(true);
 
         let valueOfA = 0;
-        const stopObservingA = reaction(
-            () => a.get("value"),
-            value => valueOfA = value,
-            true,
-        );
+        const stopObservingA = autorun(() => valueOfA = a.get("value"));
 
         await app.auth.signOut();
 
@@ -114,5 +110,7 @@ describe("FireMobCollection", () => {
         await a.nextSync;
 
         expect(valueOfA).toBe(newValue);
+        stopObservingA();
+        stopObservingQ();
     });
 });

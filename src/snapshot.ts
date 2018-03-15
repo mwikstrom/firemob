@@ -21,7 +21,7 @@ export abstract class FireMobSnapshotObject {
 
     public get syncNumber() { return observe(this).syncNumber; }
 
-    public get isSubscriptionActive() { return privateOf(this).atom.isBeingTracked; }
+    public get isSubscriptionActive() { return privateOf(this).isSubscriptionActive; }
 
     public get whenNotFetching() {
         return new Promise(resolve => {
@@ -59,6 +59,7 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
     public errorCode: firebase.firestore.FirestoreErrorCode | null = null;
     public changeNumber = 0;
     public syncNumber = 0;
+    public isSubscriptionActive = false;
     private unsubscribe: Unsubscribe | null = null;
 
     constructor(
@@ -82,11 +83,17 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
         this.atom.reportChanged();
 
         this.unsubscribe();
+        this.isSubscriptionActive = false;
+
         this.startSubscription();
     }
 
     protected startSubscription() {
-        this.stopSubscription();
+        if (this.isSubscriptionActive) {
+            return;
+        }
+
+        this.isSubscriptionActive = true;
         this.unsubscribe = this.createSubscription(
             this.onSnapshot.bind(this),
             this.onError.bind(this),
@@ -103,6 +110,8 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
             this.unsubscribe();
             this.unsubscribe = null;
         }
+
+        this.isSubscriptionActive = false;
     }
 
     protected onBecomeObserved() {

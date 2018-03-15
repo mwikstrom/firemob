@@ -133,6 +133,7 @@ class Private<
     public hasResult = false;
     public length = 0;
     public docs: TDocument[] = [];
+    private resetOnSnapshot = false;
 
     constructor(
         public readonly ref: TRef,
@@ -154,11 +155,20 @@ class Private<
     }
 
     protected startSubscription() {
-        if (!this.hasResult) {
-            this.isFetching = true;
+        if (!this.isSubscriptionActive) {
+            if (!this.hasResult) {
+                this.isFetching = true;
+            }
+
+            this.resetOnSnapshot = true;
         }
 
         super.startSubscription();
+    }
+
+    protected stopSubscription() {
+        this.detachAll();
+        super.stopSubscription();
     }
 
     protected createSubscription(
@@ -178,6 +188,12 @@ class Private<
     }
 
     protected onSnapshot(snapshot: firebase.firestore.QuerySnapshot) {
+        if (this.resetOnSnapshot) {
+            this.length = 0;
+            this.docs = [];
+            this.resetOnSnapshot = false;
+        }
+
         this.hasResult = true;
         this.length = snapshot.size;
 
@@ -196,8 +212,9 @@ class Private<
             if (change.newIndex >= 0) {
                 if (!doc) {
                     doc = this.factory(change.doc.ref);
-                    populateDocumentFromQuery(doc, this.ref, change.doc);
                 }
+
+                populateDocumentFromQuery(doc, this.ref, change.doc);
 
                 if (!keepPosition) {
                     this.docs.splice(change.newIndex, 0, doc!);
@@ -213,10 +230,13 @@ class Private<
     }
 
     protected onError(error: firebase.firestore.FirestoreError) {
+        this.detachAll();
+        super.onError(error);
+    }
+
+    private detachAll() {
         this.docs.forEach(doc => {
             detachDocumentFromQuery(doc, this.ref);
         });
-
-        super.onError(error);
     }
 }
