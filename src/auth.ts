@@ -93,10 +93,14 @@ class Private {
 
     /* istanbul ignore next */
     private onApplyError = (error: firebase.auth.Error) => {
-        const { code } = error;
+        const { code, message } = error;
         const hasError = true;
         const isSignedIn = false;
         const uid = this.uid;
+
+        /* tslint:disable-next-line */
+        console.error("[firemob] authentication error " + code + ": " + message);
+
         this.onApplyData(isSignedIn, uid, hasError, code);
     }
 

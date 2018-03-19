@@ -157,4 +157,10 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
         this.data = snapshot.data();
         super.onSnapshot(snapshot);
     }
+
+    protected onError(error: firebase.firestore.FirestoreError) {
+        /* tslint:disable-next-line */
+        console.error("[firemob] document subscription error " + error.code + ": " + error.message);
+        super.onError(error);
+    }
 }

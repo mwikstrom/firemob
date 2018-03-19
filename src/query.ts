@@ -230,6 +230,9 @@ class Private<
     }
 
     protected onError(error: firebase.firestore.FirestoreError) {
+        /* tslint:disable-next-line */
+        console.error("[firemob] query subscription error " + error.code + ": " + error.message);
+
         this.detachAll();
         super.onError(error);
     }
