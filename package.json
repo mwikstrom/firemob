@@ -1,6 +1,6 @@
 {
   "name": "firemob",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Observable data for Firebase using MobX",
   "main": "dist/es5/index.js",
   "types": "dist/es5/index.d.ts",
