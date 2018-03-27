@@ -7,31 +7,34 @@ export interface IFireMobDocumentClass<TDocument extends FireMobDocument> {
     new(ref: firebase.firestore.DocumentReference): TDocument;
 }
 
-export class FireMobDocument extends FireMobSnapshotObject {
+export class FireMobDocument<TData extends {} = firebase.firestore.DocumentData> extends FireMobSnapshotObject {
     constructor(
         ref: firebase.firestore.DocumentReference,
     ) {
-        super(new Private(ref));
+        super(new Private<TData>(ref));
     }
 
-    public get ref() { return privateOf(this).ref; }
+    public get ref() { return privateOf<TData>(this).ref; }
 
     public get id() { return this.ref.id; }
 
-    public get hasData() { return observe(this).hasData; }
+    public get hasData() { return observe<TData>(this).hasData; }
 
-    public get exists() { return observe(this).exists; }
+    public get exists() { return observe<TData>(this).exists; }
 
-    public get data() { return observe(this).data; }
+    public get data() { return observe<TData>(this).data; }
 
-    public get(field: string) { return this.data[field]; }
+    public get<TField extends keyof TData>(field: TField) {
+        const data = this.data;
+        return !!data ? data[field] : undefined;
+    }
 
     public get isSubscriptionActive() {
-        return super.isSubscriptionActive || privateOf(this).attachedQueries.length > 0;
+        return super.isSubscriptionActive || privateOf<TData>(this).attachedQueries.length > 0;
     }
 
     public get lastSubscriptionActiveTime() {
-        return Math.max(super.lastSubscriptionActiveTime, privateOf(this).lastFullyDetachedTime);
+        return Math.max(super.lastSubscriptionActiveTime, privateOf<TData>(this).lastFullyDetachedTime);
     }
 
     public collection(path: string): FireMobCollection;
@@ -69,18 +72,19 @@ export const detachDocumentFromQuery = (
     privateOf(doc).detachFromQuery(query);
 };
 
-const privateOf = (doc: FireMobDocument): Private => PrivateBase.map.get(doc) as Private;
+const privateOf = <TData extends {}>(doc: FireMobDocument<TData>): Private<TData> =>
+    PrivateBase.map.get(doc) as Private<TData>;
 
-const observe = (doc: FireMobDocument) => {
-    const priv = privateOf(doc);
+const observe = <TData extends {}>(doc: FireMobDocument<TData>) => {
+    const priv = privateOf<TData>(doc);
     priv.atom.reportObserved();
     return priv;
 };
 
-class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
+class Private<TData extends {}> extends PrivateBase<firebase.firestore.DocumentSnapshot> {
     public hasData = false;
     public exists: boolean | null = null;
-    public data: firebase.firestore.DocumentData = {};
+    public data: TData | null = null;
     public attachedQueries: firebase.firestore.Query[] = [];
     public lastFullyDetachedTime = 0;
 
@@ -163,7 +167,7 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
 
     protected onSnapshot(snapshot: firebase.firestore.DocumentSnapshot) {
         this.hasData = this.exists = snapshot.exists;
-        this.data = snapshot.data();
+        this.data = snapshot.data() as TData;
         super.onSnapshot(snapshot);
     }
 
