@@ -1,16 +1,16 @@
 import * as firebase from "firebase/app";
 
-import { FireMobDocument } from "./document";
-import { createDocument, FireMobDocumentFactory, FireMobQuery } from "./query";
+import { FireMobDocument, IFireMobDocumentClass } from "./document";
+import { createDocument, FireMobQuery } from "./query";
 
 export class FireMobCollection<
     TDocument extends FireMobDocument = FireMobDocument
 > extends FireMobQuery<firebase.firestore.CollectionReference, TDocument> {
     constructor(
         ref: firebase.firestore.CollectionReference,
-        factory: FireMobDocumentFactory<TDocument> = doc => new FireMobDocument(doc) as TDocument,
+        documentClass: IFireMobDocumentClass<TDocument>,
     ) {
-        super(ref, factory);
+        super(ref, documentClass);
     }
 
     public get id() { return this.ref.id; }

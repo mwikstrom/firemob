@@ -50,10 +50,9 @@ export class FireMobDocument<TData extends {} = firebase.firestore.DocumentData>
             documentClass = FireMobDocument as IFireMobDocumentClass<TDocument>;
         }
 
-        const factory = (arg: firebase.firestore.DocumentReference) => new documentClass!(arg);
         const ref = this.ref.collection(path);
 
-        return new FireMobCollection(ref, factory);
+        return new FireMobCollection(ref, documentClass);
     }
 }
 

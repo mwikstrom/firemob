@@ -7,12 +7,21 @@ import { FireMobDocument, IFireMobDocumentClass } from "./document";
 import { FireMobQuery } from "./query";
 
 export class FireMobApp {
-    public static for(thing: FireMobAuth | FireMobQuery | FireMobDocument): FireMobApp | null {
+    public static for(
+        thing:
+            FireMobAuth |
+            FireMobQuery |
+            FireMobDocument |
+            firebase.firestore.Query |
+            firebase.firestore.DocumentReference,
+    ): FireMobApp | null {
         const base =
             thing instanceof FireMobDocument ? thing.ref.firestore.app :
             thing instanceof FireMobCollection ? thing.ref.firestore.app :
             thing instanceof FireMobAuth ? thing.base.app :
             thing instanceof FireMobQuery ? (thing.ref as firebase.firestore.Query).firestore.app :
+            thing instanceof firebase.firestore.Query ? thing.firestore.app :
+            thing instanceof firebase.firestore.DocumentReference ? thing.firestore.app :
             null;
 
         return base && appMap.has(base) ? appMap.get(base)! : null;
@@ -81,11 +90,10 @@ export class FireMobApp {
             documentClass = FireMobDocument as IFireMobDocumentClass<TDocument>;
         }
 
-        const factory = (doc: firebase.firestore.DocumentReference) => this.doc(doc, documentClass!);
         const priv = Private.map.get(this)!;
         const ref = priv.base.firestore().collection(path);
 
-        return new FireMobCollection(ref, factory);
+        return new FireMobCollection(ref, documentClass);
     }
 }
 

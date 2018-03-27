@@ -1,11 +1,8 @@
 import * as firebase from "firebase/app";
 
-import { detachDocumentFromQuery, FireMobDocument, populateDocumentFromQuery } from "./document";
+import { FireMobApp } from "./app";
+import { detachDocumentFromQuery, FireMobDocument, IFireMobDocumentClass, populateDocumentFromQuery } from "./document";
 import { FireMobSnapshotObject, PrivateBase } from "./snapshot";
-
-export type FireMobDocumentFactory<TDocument extends FireMobDocument = FireMobDocument> = (
-    ref: firebase.firestore.DocumentReference,
-) => TDocument;
 
 export class FireMobQuery<
     TRef extends firebase.firestore.Query = firebase.firestore.Query,
@@ -13,9 +10,9 @@ export class FireMobQuery<
 > extends FireMobSnapshotObject {
     constructor(
         ref: TRef,
-        factory: FireMobDocumentFactory<TDocument>,
+        documentClass: IFireMobDocumentClass<TDocument>,
     ) {
-        super(new Private(ref, factory));
+        super(new Private(ref, documentClass));
     }
 
     public get ref() { return privateOf<TRef, TDocument>(this).ref; }
@@ -93,7 +90,7 @@ const extend = <
     const priv = privateOf(query);
     return new FireMobQuery<firebase.firestore.Query, TDocument>(
         how(priv.ref),
-        priv.factory,
+        priv.documentClass,
     );
 };
 
@@ -105,7 +102,8 @@ export const createDocument = <
 ) => {
     const priv = privateOf(query);
     const ref = priv.ref.doc(path);
-    return priv.factory(ref);
+    const app = FireMobApp.for(ref)!;
+    return app.doc(ref, priv.documentClass);
 };
 
 const privateOf = <
@@ -137,7 +135,7 @@ class Private<
 
     constructor(
         public readonly ref: TRef,
-        public readonly factory: FireMobDocumentFactory<TDocument>,
+        public readonly documentClass: IFireMobDocumentClass<TDocument>,
     ) {
         super(ref instanceof firebase.firestore.CollectionReference ? "FireMobCollection@" + ref.path : "FireMobQuery");
     }
@@ -211,7 +209,7 @@ class Private<
 
             if (change.newIndex >= 0) {
                 if (!doc) {
-                    doc = this.factory(change.doc.ref);
+                    doc = FireMobApp.for(this.ref)!.doc(change.doc.ref, this.documentClass);
                 }
 
                 populateDocumentFromQuery(doc, this.ref, change.doc);
