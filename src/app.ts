@@ -1,9 +1,10 @@
 import * as firebase from "firebase/app";
 
-import { FireMobQuery } from ".";
 import { FireMobAuth } from "./auth";
+import { DocumentCache } from "./cache";
 import { FireMobCollection } from "./collection";
 import { FireMobDocument, IFireMobDocumentClass } from "./document";
+import { FireMobQuery } from "./query";
 
 export class FireMobApp {
     public static for(thing: FireMobAuth | FireMobQuery | FireMobDocument): FireMobApp | null {
@@ -47,13 +48,13 @@ export class FireMobApp {
         return Private.map.get(this)!.base.delete();
     }
 
-    public doc(path: string): FireMobDocument;
+    public doc(pathOrRef: string | firebase.firestore.DocumentReference): FireMobDocument;
     public doc<TDocument extends FireMobDocument>(
-        path: string,
+        pathOrRef: string | firebase.firestore.DocumentReference,
         documentClass: IFireMobDocumentClass<TDocument>,
     ): TDocument;
     public doc<TDocument extends FireMobDocument>(
-        path: string,
+        pathOrRef: string | firebase.firestore.DocumentReference,
         documentClass?: IFireMobDocumentClass<TDocument>,
     ) {
         if (!documentClass) {
@@ -61,9 +62,10 @@ export class FireMobApp {
         }
 
         const priv = Private.map.get(this)!;
-        const ref = priv.base.firestore().doc(path);
+        const ref = typeof pathOrRef === "string" ? priv.base.firestore().doc(pathOrRef) : pathOrRef;
+        const cache = DocumentCache.for(documentClass);
 
-        return new documentClass(ref);
+        return cache.get(ref);
     }
 
     public collection(path: string): FireMobCollection;
@@ -79,7 +81,7 @@ export class FireMobApp {
             documentClass = FireMobDocument as IFireMobDocumentClass<TDocument>;
         }
 
-        const factory = (arg: firebase.firestore.DocumentReference) => new documentClass!(arg);
+        const factory = (doc: firebase.firestore.DocumentReference) => this.doc(doc, documentClass!);
         const priv = Private.map.get(this)!;
         const ref = priv.base.firestore().collection(path);
 

@@ -30,6 +30,10 @@ export class FireMobDocument extends FireMobSnapshotObject {
         return super.isSubscriptionActive || privateOf(this).attachedQueries.length > 0;
     }
 
+    public get lastSubscriptionActiveTime() {
+        return Math.max(super.lastSubscriptionActiveTime, privateOf(this).lastFullyDetachedTime);
+    }
+
     public collection(path: string): FireMobCollection;
     public collection<TDocument extends FireMobDocument>(
         path: string,
@@ -78,6 +82,7 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
     public exists: boolean | null = null;
     public data: firebase.firestore.DocumentData = {};
     public attachedQueries: firebase.firestore.Query[] = [];
+    public lastFullyDetachedTime = 0;
 
     constructor(
         public readonly ref: firebase.firestore.DocumentReference,
@@ -103,6 +108,10 @@ class Private extends PrivateBase<firebase.firestore.DocumentSnapshot> {
         }
 
         this.attachedQueries = this.attachedQueries.filter(it => it !== query);
+
+        if (this.attachedQueries.length === 0) {
+            this.lastFullyDetachedTime = new Date().getTime();
+        }
 
         if (this.attachedQueries.length === 0 && this.atom.isBeingTracked && !this.isSubscriptionActive) {
             this.startSubscription();

@@ -13,7 +13,7 @@ export class FireMobQuery<
 > extends FireMobSnapshotObject {
     constructor(
         ref: TRef,
-        factory: FireMobDocumentFactory<TDocument> = doc => new FireMobDocument(doc) as TDocument,
+        factory: FireMobDocumentFactory<TDocument>,
     ) {
         super(new Private(ref, factory));
     }

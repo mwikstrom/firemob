@@ -8,7 +8,7 @@ export class FireMobCollection<
 > extends FireMobQuery<firebase.firestore.CollectionReference, TDocument> {
     constructor(
         ref: firebase.firestore.CollectionReference,
-        factory?: FireMobDocumentFactory<TDocument>,
+        factory: FireMobDocumentFactory<TDocument> = doc => new FireMobDocument(doc) as TDocument,
     ) {
         super(ref, factory);
     }

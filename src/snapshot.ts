@@ -23,6 +23,8 @@ export abstract class FireMobSnapshotObject {
 
     public get isSubscriptionActive() { return privateOf(this).isSubscriptionActive; }
 
+    public get lastSubscriptionActiveTime() { return privateOf(this).lastSubscriptionActiveTime; }
+
     public get whenNotFetching() {
         return new Promise(resolve => {
             when(() => !this.isFetching, resolve);
@@ -59,7 +61,8 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
     public errorCode: firebase.firestore.FirestoreErrorCode | null = null;
     public changeNumber = 0;
     public syncNumber = 0;
-    public isSubscriptionActive = false;
+    private isSubscriptionActiveFlag = false;
+    private lastSubscriptionActiveTimeValue = 0;
     private unsubscribe: Unsubscribe | null = null;
 
     constructor(
@@ -70,6 +73,14 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
             this.onBecomeObserved.bind(this),
             this.onBecomeUnobserved.bind(this),
         );
+    }
+
+    public get isSubscriptionActive() {
+        return this.isSubscriptionActiveFlag;
+    }
+
+    public get lastSubscriptionActiveTime() {
+        return this.lastSubscriptionActiveTimeValue;
     }
 
     public resume() {
@@ -83,7 +94,7 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
         this.atom.reportChanged();
 
         this.unsubscribe();
-        this.isSubscriptionActive = false;
+        this.setSubscriptionActive(false);
 
         this.startSubscription();
     }
@@ -93,7 +104,7 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
             return;
         }
 
-        this.isSubscriptionActive = true;
+        this.setSubscriptionActive(true);
         this.unsubscribe = this.createSubscription(
             this.onSnapshot.bind(this),
             this.onError.bind(this),
@@ -111,7 +122,7 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
             this.unsubscribe = null;
         }
 
-        this.isSubscriptionActive = false;
+        this.setSubscriptionActive(false);
     }
 
     protected onBecomeObserved() {
@@ -144,6 +155,15 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
         ++this.changeNumber;
         ++this.syncNumber;
         this.atom.reportChanged();
+    }
+
+    private setSubscriptionActive(flag: boolean) {
+        if (flag !== this.isSubscriptionActiveFlag) {
+            this.isSubscriptionActiveFlag = flag;
+            if (!flag) {
+                this.lastSubscriptionActiveTimeValue = new Date().getTime();
+            }
+        }
     }
 }
 
