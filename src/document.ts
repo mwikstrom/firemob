@@ -116,7 +116,7 @@ class Private<TData extends {}> extends PrivateBase<firebase.firestore.DocumentS
             this.lastFullyDetachedTime = new Date().getTime();
         }
 
-        if (this.attachedQueries.length === 0 && this.atom.isBeingTracked && !this.isSubscriptionActive) {
+        if (this.attachedQueries.length === 0 && !this.isSubscriptionActive) {
             this.startSubscription();
             ++this.changeNumber;
             this.atom.reportChanged();
@@ -143,7 +143,7 @@ class Private<TData extends {}> extends PrivateBase<firebase.firestore.DocumentS
         onSnapshot: (snapshot: firebase.firestore.DocumentSnapshot) => void,
         onError: (error: firebase.firestore.FirestoreError) => void,
     ) {
-        const options: firebase.firestore.DocumentListenOptions = {
+        const options: firebase.firestore.SnapshotListenOptions = {
             includeMetadataChanges: true,
         };
 

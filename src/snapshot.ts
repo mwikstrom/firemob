@@ -1,6 +1,6 @@
 import * as firebase from "firebase/app";
 
-import { Atom, when } from "mobx";
+import { createAtom, IAtom, when } from "mobx";
 
 export abstract class FireMobSnapshotObject {
     constructor(priv: PrivateBase) {
@@ -53,7 +53,7 @@ export abstract class FireMobSnapshotObject {
 
 export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
     public static map = new WeakMap<FireMobSnapshotObject, PrivateBase>();
-    public readonly atom: Atom;
+    public readonly atom: IAtom;
     public isFetching = false;
     public isFromCache = false;
     public hasPendingWrites = false;
@@ -68,7 +68,7 @@ export abstract class PrivateBase<TSnapshot extends ISnapshot = ISnapshot> {
     constructor(
         name: string,
     ) {
-        this.atom = new Atom(
+        this.atom = createAtom(
             name,
             this.onBecomeObserved.bind(this),
             this.onBecomeUnobserved.bind(this),

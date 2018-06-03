@@ -1,6 +1,6 @@
 import * as firebase from "firebase/app";
 import "firebase/auth";
-import { Atom, when } from "mobx";
+import { createAtom, IAtom, when } from "mobx";
 
 export class FireMobAuth {
     constructor(
@@ -52,7 +52,7 @@ const observe = (instance: FireMobAuth) => {
 
 class Private {
     public static map = new WeakMap<FireMobAuth, Private>();
-    public readonly atom: Atom;
+    public readonly atom: IAtom;
     public uid = "";
     public errorCode = "";
     public hasError = false;
@@ -64,7 +64,7 @@ class Private {
     constructor(
         public readonly base: firebase.auth.Auth,
     ) {
-        this.atom = new Atom(
+        this.atom = createAtom(
             "FireMobAuth@" + base.app.name,
             this.onBecomeObserved,
             this.onBecomeUnobserved,

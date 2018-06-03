@@ -31,7 +31,7 @@
     "transform": {
       "^.+\\.ts$": "ts-jest"
     },
-    "testRegex": "\\.spec\\.ts$",
+    "testRegex": "\\.spec\\.disabled\\.ts$",
     "moduleFileExtensions": [
       "ts",
       "js",
@@ -41,7 +41,7 @@
     "collectCoverage": true,
     "coverageDirectory": "coverage",
     "collectCoverageFrom": [
-      "src/*.ts"
+      "src/*.disabled.ts"
     ],
     "coveragePathIgnorePatterns": [
       "index\\.ts",
@@ -52,9 +52,9 @@
       "lcov"
     ]
   },
-  "dependencies": {
-    "firebase": "^4.11.0",
-    "mobx": "^3.6.1"
+  "peerDependencies": {
+    "firebase": "5.x",
+    "mobx": "4.x"
   },
   "devDependencies": {
     "@types/jest": "^22.2.0",

@@ -173,9 +173,8 @@ class Private<
         onSnapshot: (snapshot: firebase.firestore.QuerySnapshot) => void,
         onError: (error: firebase.firestore.FirestoreError) => void,
     ) {
-        const options: firebase.firestore.QueryListenOptions = {
-            includeDocumentMetadataChanges: true,
-            includeQueryMetadataChanges: true,
+        const options: firebase.firestore.SnapshotListenOptions = {
+            includeMetadataChanges: true,
         };
 
         return this.ref.onSnapshot(
@@ -195,7 +194,7 @@ class Private<
         this.hasResult = true;
         this.length = snapshot.size;
 
-        snapshot.docChanges.forEach(change => {
+        snapshot.docChanges().forEach(change => {
             let doc: TDocument | null = null;
             const keepPosition = change.oldIndex === change.newIndex;
 
