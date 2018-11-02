@@ -27,7 +27,7 @@ export class FireMobAuth {
         });
     }
 
-    public signInWithEmailAndPassword(email: string, password: string): Promise<void> {
+    public signInWithEmailAndPassword(email: string, password: string): Promise<any> {
         const priv = observe(this);
         const promise = priv.base.signInWithEmailAndPassword(email, password);
         priv.isFetching = true;
